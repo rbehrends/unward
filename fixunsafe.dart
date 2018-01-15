@@ -107,7 +107,7 @@ class FileParser {
 	    if (isAlphaNum(ch)) {
 	      if (transform) {
 		var idbuf = new StringBuffer(ch);
-		var idstart = p;
+		var idstart = p-1;
 		while (p < line.length && isAlphaNum(line[p])) {
 		  idbuf.write(line[p++]);
 		}
