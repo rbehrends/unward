@@ -197,11 +197,20 @@ List<String> allFiles(List<String> paths) {
   return result;
 }
 
+ArgResults parseArgs(ArgParser parser, List<String> args) {
+  try {
+    return parser.parse(args);
+  } catch (e) {
+    fatal(e.message); // doesn't return
+    return null; // make dartanalyzer happy
+  }
+}
+
 void main(List<String> args) {
   ArgParser argparser = new ArgParser()
       ..addFlag("scan", abbr: "s")
       ..addOption("rewrite-from", abbr: "r");
-  var opts = argparser.parse(args);
+  var opts = parseArgs(argparser, args);
   if (opts.wasParsed("scan") == opts.wasParsed("rewrite-from")) {
     fatal("specify exactly one of --scan and --rewrite-from");
   }
