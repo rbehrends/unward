@@ -19,7 +19,7 @@ List<bool> AlphaNum = () {
   fill(bits, "0", "9");
   fill(bits, "_", "_");
   return bits;
-} ();
+}();
 
 bool isAlphaNum(String ch) {
   return AlphaNum[ch.codeUnitAt(0)];
@@ -39,10 +39,12 @@ class FileParser {
   int lineNo = 0;
   int noward = 0;
   StringBuffer out = null;
+
   FileParser(this.path) {
     var file = new File(path);
     lines = file.readAsLinesSync(encoding: LATIN1);
   }
+
   void scanLine() {
     var line = lines[lineNo];
     out = null;
@@ -53,102 +55,98 @@ class FileParser {
       var match = rxPreProc.firstMatch(line);
       if (match != null) {
         switch (match[1]) {
-	case "ifndef":
-	case "if":
-	case "ifdef":
-	  if (rxNoWard.hasMatch(line)) {
-	    noward = 1;
-	  } else if (noward > 0) {
-	    noward++;
-	  }
-	  break;
-	case "elif":
-	  if (noward == 1)
-	    noward = 0;
-	  break;
-	case "else":
-	  if (noward == 1)
-	    noward = 0;
-	  break;
-	case "endif":
-	  if (noward > 0)
-	    noward--;
-	  break;
-	}
-	return;
+          case "ifndef":
+          case "if":
+          case "ifdef":
+            if (rxNoWard.hasMatch(line)) {
+              noward = 1;
+            } else if (noward > 0) {
+              noward++;
+            }
+            break;
+          case "elif":
+            if (noward == 1) noward = 0;
+            break;
+          case "else":
+            if (noward == 1) noward = 0;
+            break;
+          case "endif":
+            if (noward > 0) noward--;
+            break;
+        }
+        return;
       }
     }
     while (p < line.length) {
       String ch = line[p++];
       if (inString) {
         if (ch == "\"") {
-	  inString = false;
-	} else if (ch == "\\") {
-	  p ++;
-	}
+          inString = false;
+        } else if (ch == "\\") {
+          p++;
+        }
       } else if (inComment) {
         if (ch == "*" && p < line.length && line[p] == "/") {
-	  p++;
-	  inComment = false;
-	}
+          p++;
+          inComment = false;
+        }
       } else {
         switch (ch) {
-	  case "\"":
-	    inString = true;
-	    break;
-	  case "/":
-	    if (p < line.length && line[p] == '*') {
-	      p++;
-	      inComment = true;
-	    } else if (p < line.length && line[p] == '/') {
-	      // skip to end of line
-	      p = line.length;
-	    }
-	    break;
-	  default:
-	    if (isAlphaNum(ch)) {
-	      if (transform) {
-		var idbuf = new StringBuffer(ch);
-		var idstart = p-1;
-		while (p < line.length && isAlphaNum(line[p])) {
-		  idbuf.write(line[p++]);
-		}
-		var id = idbuf.toString();
-		if (noward > 0 && names.contains(id)) {
-		  if (out == null)
-		    out = new StringBuffer();
-		  out.write(line.substring(oldp, idstart));
-		  oldp = p;
-		  out.write("UNSAFE_");
-		  out.write(id);
-		}
-	      } else {
-		var idbuf = new StringBuffer(ch);
-		while (p < line.length && isAlphaNum(line[p])) {
-		  idbuf.write(line[p++]);
-		}
-		var id = idbuf.toString();
-		while (p < line.length) {
-		  var ch = line[p];
-		  if (ch == '(') {
-		    if (noward > 0 && !id.startsWith("UNSAFE_")) {
-		      names.add(id);
-		    }
-		    break;
-		  }
-		  if (ch != ' ' && ch != '\t') {
-		    break;
-		  }
-		  p++;
-		}
-	      }
-	    }
-	}
+          case "\"":
+            inString = true;
+            break;
+          case "/":
+            if (p < line.length && line[p] == '*') {
+              p++;
+              inComment = true;
+            } else if (p < line.length && line[p] == '/') {
+              // skip to end of line
+              p = line.length;
+            }
+            break;
+          default:
+            if (isAlphaNum(ch)) {
+              if (transform) {
+                var idbuf = new StringBuffer(ch);
+                var idstart = p - 1;
+                while (p < line.length && isAlphaNum(line[p])) {
+                  idbuf.write(line[p++]);
+                }
+                var id = idbuf.toString();
+                if (noward > 0 && names.contains(id)) {
+                  if (out == null) out = new StringBuffer();
+                  out.write(line.substring(oldp, idstart));
+                  oldp = p;
+                  out.write("UNSAFE_");
+                  out.write(id);
+                }
+              } else {
+                var idbuf = new StringBuffer(ch);
+                while (p < line.length && isAlphaNum(line[p])) {
+                  idbuf.write(line[p++]);
+                }
+                var id = idbuf.toString();
+                while (p < line.length) {
+                  var ch = line[p];
+                  if (ch == '(') {
+                    if (noward > 0 && !id.startsWith("UNSAFE_")) {
+                      names.add(id);
+                    }
+                    break;
+                  }
+                  if (ch != ' ' && ch != '\t') {
+                    break;
+                  }
+                  p++;
+                }
+              }
+            }
+        }
       }
     }
-    if (out != null)
-      out.write(line.substring(oldp, line.length));
+    if (out != null) out.write(line.substring(oldp, line.length));
   }
+
   void scanFile() {
     lineNo = 0;
     noward = 0;
@@ -160,6 +158,7 @@ class FileParser {
       scanLine();
     }
   }
+
   bool transformFile(Set<String> ids) {
     bool changed = false;
     lineNo = 0;
@@ -171,14 +170,15 @@ class FileParser {
     while (lineNo < lines.length) {
       scanLine();
       if (out != null) {
-        lines[lineNo-1] = out.toString();
-	changed = true;
+        lines[lineNo - 1] = out.toString();
+        changed = true;
       }
     }
     return changed;
   }
+
   Set<String> allCapsNames() =>
-    names.where((s) => rxAllCaps.hasMatch(s)).toSet();
+      names.where((s) => rxAllCaps.hasMatch(s)).toSet();
 }
 
 void fatal(String message) {
@@ -190,11 +190,11 @@ List<String> allFiles(List<String> paths) {
   var result = <String>[];
   for (final path in paths) {
     if (FileSystemEntity.isDirectorySync(path)) {
-      result.addAll(new Directory(path).listSync(recursive: true)
-        .where((fse) => fse is File)
-	.map((fse) => fse.path)
-	.where((path) => path.endsWith(".c") || path.endsWith(".h"))
-      );
+      result.addAll(new Directory(path)
+          .listSync(recursive: true)
+          .where((fse) => fse is File)
+          .map((fse) => fse.path)
+          .where((path) => path.endsWith(".c") || path.endsWith(".h")));
     } else {
       result.add(path);
     }
@@ -203,7 +203,7 @@ List<String> allFiles(List<String> paths) {
 }
 
 String programName() =>
-  pathpkg.basenameWithoutExtension(Platform.script.toString());
+    pathpkg.basenameWithoutExtension(Platform.script.toString());
 
 ArgResults parseArgs(ArgParser parser, List<String> args) {
   try {
@@ -216,7 +216,7 @@ ArgResults parseArgs(ArgParser parser, List<String> args) {
 
 void help(ArgParser argparser) {
   String indent(String str) =>
-    str.replaceAll(new RegExp("^", multiLine: true), "  ");
+      str.replaceAll(new RegExp("^", multiLine: true), "  ");
   print("Usage: ${programName()} [OPTIONS] [PATHS]\n");
   print(indent(argparser.usage));
   exit(0);
@@ -224,12 +224,11 @@ void help(ArgParser argparser) {
 
 ArgParser makeArgParser() {
   var argparser = new ArgParser();
-  argparser.addFlag("scan", abbr: "s",
-    help: "scan files and directories");
-  argparser.addOption("rewrite-from", abbr: "r",
-    help: "rewrite files and directories");
-  argparser.addFlag("help", abbr: "h", negatable: false,
-    help: "show this help");
+  argparser.addFlag("scan", abbr: "s", help: "scan files and directories");
+  argparser.addOption("rewrite-from",
+      abbr: "r", help: "rewrite files and directories");
+  argparser.addFlag("help",
+      abbr: "h", negatable: false, help: "show this help");
   return argparser;
 }
 
@@ -242,7 +241,9 @@ void main(List<String> args) {
   if (opts.wasParsed("scan") == opts.wasParsed("rewrite-from")) {
     fatal("specify exactly one of --scan and --rewrite-from");
   }
+
   List<String> files = allFiles(opts.rest);
+
   if (opts["scan"]) {
     var ids = new Set<String>();
     for (final filename in files) {
@@ -255,16 +256,17 @@ void main(List<String> args) {
     }
   } else {
     // rewrite
-    var ids = new File(opts["rewrite-from"]).readAsLinesSync()
+    var ids = new File(opts["rewrite-from"])
+        .readAsLinesSync()
         .where((line) => !line.startsWith("#"))
-	.toSet();
+        .toSet();
     for (final filename in files) {
       final parser = new FileParser(filename);
       if (parser.transformFile(ids)) {
-	var file = new File(filename + ".tmp");
-	var output = parser.lines.join("\n") + "\n";
-	file.writeAsStringSync(output);
-	file.renameSync(filename);
+        var file = new File(filename + ".tmp");
+        var output = parser.lines.join("\n") + "\n";
+        file.writeAsStringSync(output);
+        file.renameSync(filename);
       }
     }
   }
