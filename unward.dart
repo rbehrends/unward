@@ -1,6 +1,7 @@
 #!/usr/bin/env dart
 import "dart:io";
 import "dart:convert";
+import "package:path/path.dart" as pathpkg;
 import "package:args/args.dart";
 
 void fill(List<bool> bits, String lo, String hi) {
@@ -201,7 +202,8 @@ ArgResults parseArgs(ArgParser parser, List<String> args) {
   try {
     return parser.parse(args);
   } catch (e) {
-    fatal(e.message); // doesn't return
+    final name = pathpkg.basenameWithoutExtension(Platform.script.toString());
+    fatal("$name: ${e.message}"); // doesn't return
     return null; // make dartanalyzer happy
   }
 }
