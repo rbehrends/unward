@@ -123,15 +123,16 @@ class FileParser {
 		  out.write(id);
 		}
 	      } else {
-		var id = new StringBuffer(ch);
+		var idbuf = new StringBuffer(ch);
 		while (p < line.length && isAlphaNum(line[p])) {
-		  id.write(line[p++]);
+		  idbuf.write(line[p++]);
 		}
+		var id = idbuf.toString();
 		while (p < line.length) {
 		  var ch = line[p];
 		  if (ch == '(') {
-		    if (noward > 0) {
-		      names.add(id.toString());
+		    if (noward > 0 && !id.startsWith("UNSAFE_")) {
+		      names.add(id);
 		    }
 		    break;
 		  }
@@ -190,7 +191,10 @@ List<String> allFiles(List<String> paths) {
   for (final path in paths) {
     if (FileSystemEntity.isDirectorySync(path)) {
       result.addAll(new Directory(path).listSync(recursive: true)
-        .where((fse) => fse is File).map((fse) => fse.path));
+        .where((fse) => fse is File)
+	.map((fse) => fse.path)
+	.where((path) => path.endsWith(".c") || path.endsWith(".h"))
+      );
     } else {
       result.add(path);
     }
