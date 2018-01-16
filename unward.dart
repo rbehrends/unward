@@ -198,21 +198,43 @@ List<String> allFiles(List<String> paths) {
   return result;
 }
 
+String programName() =>
+  pathpkg.basenameWithoutExtension(Platform.script.toString());
+
 ArgResults parseArgs(ArgParser parser, List<String> args) {
   try {
     return parser.parse(args);
   } catch (e) {
-    final name = pathpkg.basenameWithoutExtension(Platform.script.toString());
-    fatal("$name: ${e.message}"); // doesn't return
+    fatal("${programName()}: ${e.message}"); // doesn't return
     return null; // make dartanalyzer happy
   }
 }
 
+void help(ArgParser argparser) {
+  String indent(String str) =>
+    str.replaceAll(new RegExp("^", multiLine: true), "  ");
+  print("Usage: ${programName()} [OPTIONS] [PATHS]\n");
+  print(indent(argparser.usage));
+  exit(0);
+}
+
+ArgParser makeArgParser() {
+  var argparser = new ArgParser();
+  argparser.addFlag("scan", abbr: "s",
+    help: "scan files and directories");
+  argparser.addOption("rewrite-from", abbr: "r",
+    help: "rewrite files and directories");
+  argparser.addFlag("help", abbr: "h", negatable: false,
+    help: "show this help");
+  return argparser;
+}
+
 void main(List<String> args) {
-  ArgParser argparser = new ArgParser()
-      ..addFlag("scan", abbr: "s")
-      ..addOption("rewrite-from", abbr: "r");
+  ArgParser argparser = makeArgParser();
   var opts = parseArgs(argparser, args);
+  if (opts["help"]) {
+    help(argparser);
+  }
   if (opts.wasParsed("scan") == opts.wasParsed("rewrite-from")) {
     fatal("specify exactly one of --scan and --rewrite-from");
   }
