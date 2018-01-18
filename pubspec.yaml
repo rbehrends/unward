@@ -2,3 +2,4 @@ name: fixunsafe
 dependencies:
   args:
   path:
+  yaml:

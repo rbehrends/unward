@@ -3,6 +3,7 @@ import "dart:io";
 import "dart:convert";
 import "package:path/path.dart" as pathpkg;
 import "package:args/args.dart";
+import "package:yaml/yaml.dart";
 
 void fill(List<bool> bits, String lo, String hi) {
   int ilo = lo.codeUnitAt(0);
@@ -224,12 +225,23 @@ void help(ArgParser argparser) {
 
 ArgParser makeArgParser() {
   var argparser = new ArgParser();
-  argparser.addFlag("scan", abbr: "s", help: "scan files and directories");
+  argparser.addFlag("scan", abbr: "S", help: "scan files and directories");
   argparser.addOption("rewrite-from",
-      abbr: "r", help: "rewrite files and directories");
+      abbr: "R", help: "rewrite files and directories", valueHelp: "IDFILE");
+  argparser.addOption("resume", help: "resume scan from this identifiers",
+      abbr: "r", valueHelp: "IDFILE");
   argparser.addFlag("help",
       abbr: "h", negatable: false, help: "show this help");
   return argparser;
+}
+
+Map<String, List<String>> loadIds(String filename) {
+  var yaml = loadYaml(new File(filename).readAsStringSync());
+  List<T> copy<T>(List<T> list) => list..addAll([]);
+  return {
+    "unsafe" : copy(yaml["unsafe"] ?? []),
+    "skip" : copy(yaml["skip"] ?? []),
+  };
 }
 
 void main(List<String> args) {
@@ -245,21 +257,31 @@ void main(List<String> args) {
   List<String> files = allFiles(opts.rest);
 
   if (opts["scan"]) {
-    var ids = new Set<String>();
+    var ids = opts["resume"] != null ? loadIds(opts["resume"]) :
+      { "unsafe": [], "skip": [] };
+    var skip = ids["skip"].toSet();
     for (final filename in files) {
       final parser = new FileParser(filename);
       parser.scanFile();
-      ids.addAll(parser.allCapsNames());
+      ids["unsafe"].addAll(parser.allCapsNames());
+      ids["unsafe"] = ids["unsafe"]
+          .toSet()
+	  .difference(skip)
+	  .toList();
     }
-    for (var id in ids.toList()..sort()) {
-      print(id);
+    print("unsafe:");
+    for (var id in ids["unsafe"]..sort()) {
+      print("- $id");
+    }
+    if (ids["skip"].length != 0) {
+      print("skip:");
+      for (var id in ids["skip"]..sort()) {
+	print("- $id");
+      }
     }
   } else {
     // rewrite
-    var ids = new File(opts["rewrite-from"])
-        .readAsLinesSync()
-        .where((line) => !line.startsWith("#"))
-        .toSet();
+    var ids = loadIds(opts["rewrite-from"])["unsafe"].toSet();
     for (final filename in files) {
       final parser = new FileParser(filename);
       if (parser.transformFile(ids)) {
