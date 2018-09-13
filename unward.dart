@@ -43,7 +43,7 @@ class FileParser {
 
   FileParser(this.path) {
     var file = new File(path);
-    lines = file.readAsLinesSync(encoding: LATIN1);
+    lines = file.readAsLinesSync(encoding: latin1);
   }
 
   void scanLine() {
