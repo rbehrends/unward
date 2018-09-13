@@ -30,6 +30,31 @@ final RegExp rxPreProc = new RegExp(r"\s*#\s*(\w+)");
 final RegExp rxNoWard = new RegExp(r"\s*#\s*ifndef\s+WARD_ENABLED");
 final RegExp rxAllCaps = new RegExp(r"^[A-Z_]+$");
 
+enum TokenType {
+  WhiteSpace,
+  NewLine,
+  Comment,
+  StringLiteral,
+  Identifier,
+  Operator,
+  Unknown,
+}
+
+const tokWhiteSpace = TokenType.WhiteSpace;
+const tokNewLine = TokenType.NewLine;
+const tokStringLiteral = TokenType.StringLiteral;
+const tokComment = TokenType.Comment;
+const tokIdentifier = TokenType.Identifier;
+const tokOperator = TokenType.Operator;
+const tokUnknown = TokenType.Unknown;
+
+class Token {
+  TokenType type;
+  String text;
+  String aux;
+  Token(this.type, this.text, {this.aux});
+}
+
 class FileParser {
   final String path;
   List<String> lines;
