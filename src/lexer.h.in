@@ -9,7 +9,7 @@ extern const char *SymbolNames[];
 #define ALLBITS(n) (BIT(n+1)-1)
 // inclusive range
 #define BITRANGE(m, n) (ALLBITS(n) & ~ALLBITS(m-1))
-#define TEST(set, n) (!((set) & BIT(n)))
+#define TEST(set, n) (((set) & BIT(n)) != (Word64) 0)
 
 static const Word64 SymsWS =
   BIT(SymWS) | BIT(SymEOL) | BIT(SymComment);
@@ -34,6 +34,8 @@ struct SourceFile : public GC {
   Str *filedata;
   TokenList *tokens;
 };
+
+typedef Arr<SourceFile *> SourceList;
 
 bool ReadSource(SourceFile *source);
 bool Tokenize(SourceFile *source);

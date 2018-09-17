@@ -2,6 +2,7 @@
 #include "adlib/map.h"
 
 #include "lexer.h"
+#include "analyzer.h"
 
 void Warning(Str *s) {
   printf("warning: %s\n", s->c_str());
@@ -24,18 +25,23 @@ void PrintTokenList(TokenList *tokens) {
     printf("%s: %s\n", SymbolNames[token.sym], token.str->c_str());
   }
 }
+void PrintInlineList(InlineList *funcs) {
+  for (Word i = 0; i < funcs->len(); i++) {
+    printf("%s\n", funcs->item(i)->name->c_str());
+  }
+}
 
 // main code
 
-FileMap *InputSource;
-StrArr *InputFiles;
+FileMap *InputFiles;
+SourceList *InputSources;
 
 void Main() {
-  GCVar(InputSource, new FileMap());
-  GCVar(InputFiles, new StrArr());
+  GCVar(InputFiles, new FileMap());
+  GCVar(InputSources, new SourceList());
   for (Word i = 0; i < Args->len(); i++) {
     Str *file = Args->item(i);
-    if (!InputSource->contains(file)) {
+    if (!InputFiles->contains(file)) {
       SourceFile *source = new SourceFile();
       source->filename = file;
       if (!ReadSource(source)) {
@@ -44,8 +50,10 @@ void Main() {
         Warning(S("file contains lexical errors: ")->add(file));
       }
       // PrintTokenList(source->tokens);
-      InputSource->add(file, source);
-      InputFiles->add(file);
+      InputFiles->add(file, source);
+      InputSources->add(source);
     }
   }
+  InlineList *funcs = FindInlineFunctions(InputSources);
+  // PrintInlineList(funcs);
 }
