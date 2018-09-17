@@ -146,6 +146,10 @@ if {[opt-bool without-re2c]} {
   }
 }
 
+define RE2CFLAGS ""
+if {![is-defined RE2C]} {
+  define RE2C false
+}
 cc-with {-lang c++} {
   # Does long long exist as a type?
   set have_long_long [cc-check-types "long long"]
@@ -329,7 +333,7 @@ if {$re2c} {
   foreach file $progre {
     set ccfile "[file rootname $file].cc"
     add-rule "$ccfile: $file"
-    add-rule "\t\$(RE2C) --tags -o $ccfile $file"
+    add-rule "\t\$(RE2C) \$(RE2CFLAGS) -o $ccfile $file"
   }
 }
 
