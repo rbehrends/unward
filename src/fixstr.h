@@ -1,6 +1,6 @@
 #pragma once
 
-struct FixStr {
+struct FixStr : public GC {
   const char *str;
   Word len;
 };
