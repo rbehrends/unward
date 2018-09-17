@@ -88,7 +88,7 @@ InlineList *FindInlineFunctions(SourceList *sources) {
   InlineList *result = new InlineList();
   for (Word i = 0; i < sources->len(); i++) {
     SourceFile *source = sources->item(i);
-    if (source->filename->endsWith(".h")) {
+    if (source->filename->ends_with(".h")) {
       result->add(FindInlineFunctions(source));
     }
   }
