@@ -51,6 +51,7 @@ bool Tokenize(SourceFile *source) {
   Str *input = source->filedata;
   const char *cursor = input->c_str();
   const char *marker = NULL;
+  const char *ctxmarker = NULL;
   bool done = false;
   bool error = false;
   TokenList *result = new TokenList();
@@ -62,6 +63,7 @@ bool Tokenize(SourceFile *source) {
     re2c:yyfill:enable = 0;
     re2c:define:YYCURSOR = cursor;
     re2c:define:YYMARKER = marker;
+    re2c:define:YYCTXMARKER = ctxmarker;
 
     alpha = [a-zA-Z_];
     digit = [0-9];
@@ -73,20 +75,24 @@ bool Tokenize(SourceFile *source) {
     squote = ['];
     quote = ["];
     any = [^\000\r\n];
-    pparg = any *;
     sp = [ \t\f];
+    eol = [\000\r\n];
+    nl = "\r" | "\n" | "\r\n";
+    postpparg = [^a-zA-Z0-9_\r\n\000];
+    pparg = (postpparg any *)?;
     anystr = any \ ["\\];
+    anych = any \ ['\\];
     longops = "..." | ">>=" | "<<=" | "+=" | "-=" | "*=" | "/=" | "%="
             | "&=" | "^=" | "|=" | ">>" | "<<" | "++" | "--" | "->"
             | "&&" | "||" | "<=" | ">=" | "==" | "!=";
-    esc = "\\" any;
+    esc = "\\";
 
 #script rules.tcl
     alpha (alpha | digit)* { PUSH_TOKEN(SymIdent); }
     '0x' hex+ intsuffix { PUSH_TOKEN(SymLiteral); }
     '0' oct+ intsuffix { PUSH_TOKEN(SymLiteral); }
     digit+ intsuffix { PUSH_TOKEN(SymLiteral); }
-    "L"? squote (esc any | any) squote { PUSH_TOKEN(SymLiteral); }
+    "L"? squote (esc any anych* | anych) squote { PUSH_TOKEN(SymLiteral); }
     "L"? quote (esc any | anystr)* quote { PUSH_TOKEN(SymLiteral); }
     digit+ exp floatsuffix { PUSH_TOKEN(SymLiteral); }
     digit* "." digit+ exp? floatsuffix { PUSH_TOKEN(SymLiteral); }
@@ -102,24 +108,26 @@ bool Tokenize(SourceFile *source) {
     ";" { PUSH_TOKEN(SymSemicolon); }
     "//" any+ { PUSH_TOKEN(SymComment); }
     "/" "*" { goto comment; }
-    "\r" | "\r\n" | "\n" { PUSH_TOKEN(SymEOL); }
+    nl { PUSH_TOKEN(SymEOL); }
+    "\\" sp* / nl { PUSH_TOKEN(SymWS); }
     sp+ { PUSH_TOKEN(SymWS); }
+    "#" sp*  "if" pparg / eol { PUSH_TOKEN(SymPPCond); }
+    "#" sp* "ifdef" pparg / eol { PUSH_TOKEN(SymPPCond); }
+    "#" sp* "ifndef" pparg / eol { PUSH_TOKEN(SymPPCond); }
+    "#" sp* "else" pparg / eol { PUSH_TOKEN(SymPPCond); }
+    "#" sp* "elif" pparg / eol { PUSH_TOKEN(SymPPCond); }
+    "#" sp* "endif" pparg / eol { PUSH_TOKEN(SymPPCond); }
+    "#" sp* "define" pparg / eol { PUSH_TOKEN(SymPPDef); }
+    "#" sp* "undefine" pparg / eol { PUSH_TOKEN(SymPPDef); }
+    "#" any* / eol { PUSH_TOKEN(SymPPOther); }
+    "\000" { done = true; continue; }
     any { error = true; PUSH_TOKEN(SymBAD); }
-    "#" sp "if" sp pparg { PUSH_TOKEN(SymPPCond); }
-    "#" sp "ifdef" sp pparg { PUSH_TOKEN(SymPPCond); }
-    "#" sp "ifndef" sp pparg { PUSH_TOKEN(SymPPCond); }
-    "#" sp "else" sp pparg { PUSH_TOKEN(SymPPCond); }
-    "#" sp "elif" sp pparg { PUSH_TOKEN(SymPPCond); }
-    "#" sp "endif" sp pparg { PUSH_TOKEN(SymPPCond); }
-    "#" sp "define" sp pparg { PUSH_TOKEN(SymPPDef); }
-    "#" sp "undefine" sp pparg { PUSH_TOKEN(SymPPDef); }
-    "#" pparg { PUSH_TOKEN(SymPPOther); }
-    * { done = true; }
+    * { done = true; continue; }
     */
     comment:
     /*!re2c
     "*" "/" { PUSH_TOKEN(SymComment); }
-    [^\000] { }
+    [^\000] { goto comment; }
     "\000" { done = true; PUSH_TOKEN(SymComment); }
     */
     pushtoken:
@@ -130,5 +138,5 @@ bool Tokenize(SourceFile *source) {
   token.str = S("");
   result->add(token);
   source->tokens = result;
-  return error;
+  return !error;
 }
