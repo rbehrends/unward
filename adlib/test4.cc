@@ -71,7 +71,7 @@ void Main() {
   intarr = intarr->sort(IntCmp);
   int mismatch = 0;
   for (Word i = 1; i < intarr->len(); i++) {
-    if (intarr->item(i - 1) >= intarr->item(i))
+    if (intarr->at(i - 1) >= intarr->at(i))
       mismatch++;
   }
   Check(mismatch == 0, "sorting arrays");

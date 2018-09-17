@@ -57,7 +57,7 @@ void Main() {
   }
   Check(set->count() == 0, "remove()");
   StrArr *arr1 = new StrArr(NUMOF(data) - 1, data, CStrToStr);
-  StrArr *arr2 = new StrArr(data, (CString) NULL, CStrToStr);
+  StrArr *arr2 = new StrArr(data, (CStr) NULL, CStrToStr);
   Check(arr1->eq(arr2), "array/string equality");
   arr1 = arr1->subarr(10, arr1->len() - 10);
   arr2->remove(0, 10);
@@ -65,8 +65,7 @@ void Main() {
   Str *str = S("alphalpha");
   Check(str->substr(0, 5)->eq(str->substr(4, 5)), "substrings");
   Check(str->find('a', 1) == 4 && str->find("alp", 1) == 4, "string search");
-  Check(str->rfind('l') == 5 &&
-       str->rfind("alp") == 4 &&
-       str->find("alx") == NOWHERE,
+  Check(str->rfind('l') == 5 && str->rfind("alp") == 4
+          && str->find("alx") == NOWHERE,
       "reverse string search");
 }

@@ -75,13 +75,15 @@ public:
   Str *clone() {
     return new Str(this);
   }
-  void expand(Word newlen) {
+  Str *expand(Word newlen) {
     if (newlen > _cap)
       resize(nextPow2(newlen));
+    return this;
   }
-  void shrink(bool fit = true) {
+  Str *shrink(bool fit = true) {
     if (_len != _cap)
       resize(_len);
+    return this;
   }
   Str *add(char ch) {
     expand(_len + 1);
@@ -117,27 +119,15 @@ public:
   StrArr *split(const char *s);
   StrArr *split(const char *s, Word n);
   StrArr *splitLines();
-  bool startsWith(Str *str);
-  bool startsWith(const char *s);
-  bool startsWith(const char *s, Word n);
-  bool endsWith(Str *str);
-  bool endsWith(const char *s);
-  bool endsWith(const char *s, Word n);
+  bool starts_with(Str *str);
+  bool starts_with(const char *s);
+  bool starts_with(const char *s, Word n);
+  bool ends_with(Str *str);
+  bool ends_with(const char *s);
+  bool ends_with(const char *s, Word n);
   bool eq(Str *str);
   bool eq(const char *str);
   bool eq(const char *str, Word n);
-  Str &operator<<(char ch) {
-    add(ch);
-    return *this;
-  }
-  Str &operator<<(Str *str) {
-    add(str);
-    return *this;
-  }
-  Str &operator<<(const char *str) {
-    add(str);
-    return *this;
-  }
   Word len() {
     return _len;
   }
@@ -145,11 +135,15 @@ public:
     return _len;
   }
   char &ch(Word i) {
-    require(i < _len, "string index out of range");
+    require(i <= _len, "string index out of range");
+    return _data[i];
+  }
+  char &at(Word i) {
+    require(i <= _len, "string index out of range");
     return _data[i];
   }
   char &operator[](Word i) {
-    require(i < _len, "string index out of range");
+    require(i <= _len, "string index out of range");
     return _data[i];
   }
   char *c_str() {
@@ -165,13 +159,45 @@ Str *StrJoin(StrArr *arr, char ch);
 Str *StrJoin(StrArr *arr, const char *sep);
 Str *StrJoin(StrArr *arr, const char *sep, Word n);
 
+#define StrArrLit(a) (new StrArr(NUMOF(a), a, CStrToStr))
+
+int Cmp(Str *str1, Str *str2);
+int StrCmp(Str *str1, Str *str2);
+Str *ToStr(Int x);
+Str *ToStr(Word x);
+Str *CStrToStr(const char *s);
+
 static inline Str *S(const char *str) {
   return new Str(str);
 }
 
-#define StrArrLit(a) (new StrArr(NUMOF(a), a, CStrToStr))
+static inline Str *S(Int i) {
+  return ToStr(i);
+}
 
-int Cmp(Str *str1, Str *str2);
-Str *ToStr(Int x);
-Str *ToStr(Word x);
-Str *CStrToStr(const char *s);
+static inline Str *S(Word w) {
+  return ToStr(w);
+}
+
+static inline Str *S(StrArr *arr, const char *sep = " ") {
+  return StrJoin(arr, sep);
+}
+
+static inline StrArr *A() {
+  return new StrArr();
+}
+static inline StrArr *A(CStr s) {
+  return new StrArr(1, S(s));
+}
+
+static inline StrArr *A(CStr s1, CStr s2) {
+  return new StrArr(2, S(s1), S(s2));
+}
+
+static inline StrArr *A(CStr s1, CStr s2, CStr s3) {
+  return new StrArr(3, S(s1), S(s2), S(s3));
+}
+
+static inline StrArr *A(CStr s1, CStr s2, CStr s3, CStr s4) {
+  return new StrArr(4, S(s1), S(s2), S(s3), S(s4));
+}

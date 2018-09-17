@@ -66,6 +66,8 @@ public:
   Set(CmpFunc(T, cmp), HashFunc(T, hash));
   Set();
   Set(Set<T> *set, bool copy = true);
+  Set(Arr<T> *, CmpFunc(T, cmp), HashFunc(T, hash));
+  Set(Arr<T> *);
   Set<T> *clone() {
     return new Set(this);
   }
@@ -79,16 +81,19 @@ public:
   }
   bool remove(T item);
   bool contains(T item);
+  bool at(T item) {
+    return contains(item);
+  }
   T *find(T item);
   T get_or_add(T item);
   Arr<T> *items();
   bool eq(Set<T> *that);
   Set<T> *union_with(Set<T> *that, bool replace = false);
-  void union_in_place(Set<T> *that, bool replace = false);
+  Set<T> *union_in_place(Set<T> *that, bool replace = false);
   Set<T> *intersect_with(Set<T> *that);
-  void intersect_in_place(Set<T> *that);
+  Set<T> *intersect_in_place(Set<T> *that);
   Set<T> *diff_with(Set<T> *that);
-  void diff_in_place(Set<T> *that);
+  Set<T> *diff_in_place(Set<T> *that);
   template <typename A, typename F>
   A fold(A init, F foldfunc);
   template <typename U, typename F>
@@ -152,6 +157,26 @@ Set<T>::Set(Set<T> *set, bool copy) {
 }
 
 template <typename T>
+Set<T>::Set(Arr<T> *arr) {
+  resize(_minsize);
+  _count = 0;
+  _deleted = 0;
+  _cmp = Cmp;
+  _hash = Hash;
+  add(arr);
+}
+
+template <typename T>
+Set<T>::Set(Arr<T> *arr, CmpFunc(T, cmp), HashFunc(T, hash)) {
+  resize(_minsize);
+  _count = 0;
+  _deleted = 0;
+  _cmp = cmp;
+  _hash = hash;
+  add(arr);
+}
+
+template <typename T>
 void Set<T>::uncheckedAdd(T item, bool replace) {
   Word mask = _size - 1;
   Word hash = _hash(item) & mask;
@@ -198,8 +223,8 @@ template <typename T>
 Set<T> *Set<T>::add(Arr<T> *arr, bool replace) {
   if ((_count + _deleted) * 3 / 2 >= _size)
     rebuild();
-  for (Word i = 0; i < arr->size(); i++)
-    add(arr->item(i), replace);
+  for (Word i = 0; i < arr->len(); i++)
+    add(arr->at(i), replace);
   return this;
 }
 
@@ -250,31 +275,29 @@ Arr<T> *Set<T>::items() {
 }
 
 template <typename T>
-void Set<T>::union_in_place(Set<T> *that, bool replace) {
+Set<T> *Set<T>::union_in_place(Set<T> *that, bool replace) {
   for (Each it(that); it; it++) {
     add(*it, replace);
   }
+  return this;
 }
 
 template <typename T>
 Set<T> *Set<T>::union_with(Set<T> *that, bool replace) {
-  Set<T> *result = clone();
-  result->union_in_place(that, replace);
-  return result;
+  return clone()->union_in_place(that, replace);
 }
 
 template <typename T>
-void Set<T>::diff_in_place(Set<T> *that) {
+Set<T> *Set<T>::diff_in_place(Set<T> *that) {
   for (Each it(that); it; it++) {
     remove(*it);
   }
+  return this;
 }
 
 template <typename T>
 Set<T> *Set<T>::diff_with(Set<T> *that) {
-  Set<T> *result = clone();
-  result->diff_in_place(that);
-  return result;
+  return clone()->diff_in_place(that);
 }
 
 template <typename T>
@@ -288,9 +311,10 @@ Set<T> *Set<T>::intersect_with(Set<T> *that) {
 }
 
 template <typename T>
-void Set<T>::intersect_in_place(Set<T> *that) {
+Set<T> *Set<T>::intersect_in_place(Set<T> *that) {
   Set<T> *tmp = intersect_with(that);
   *this = *tmp;
+  return this;
 }
 
 template <typename T>
@@ -343,6 +367,10 @@ void Set<T>::iter(F iterfunc) {
 }
 
 typedef Set<Str *> StrSet;
+
+static inline Str *S(StrSet *set, const char *sep = " ") {
+  return StrJoin(set->items()->sort(StrCmp), sep);
+}
 
 #undef SLOT_EMPTY
 #undef SLOT_OCCUPIED

@@ -22,6 +22,7 @@ if {[file exists $preconf]} {
 options {
   with-boehm-gc:=yes => "Use the Boehm GC; the argument can be yes, no, or a path to the GC's installation directory."
   without-re2c => "Do not use re2c."
+  adlibdev => "Change Makefile defaults for AdLib core development."
 }
 
 set includes "-I."
@@ -29,6 +30,14 @@ set libs {}
 
 set boehmarg "no"
 opt-str with-boehm-gc boehmarg
+
+if {[opt-bool adlibdev]} {
+  define DEFAULT_TARGET "\$(TARGETS)"
+  define DEBUG 1
+} else {
+  define DEFAULT_TARGET "\$(PROG)"
+  define DEBUG 0
+}
 
 switch -glob -- $boehmarg {
   yes -
@@ -136,12 +145,19 @@ if {[opt-bool without-re2c]} {
   set re2c 0
 } else {
   cc-check-progs re2c
+  msg-checking "Checking re2c version..."
   if {[catch {exec re2c --version} re2cout]} {
     set re2c 0
+    msg-result "unknown (disable re2c)"
   } else {
+    set re2c 1
     switch -glob -- $re2cout {
-      "re2c 1.*.*" { set re2c 1 }
-      * { set re2c 0 }
+      "re2c 1.*.*" {
+        msg-result "($re2cout) ok"
+      }
+      * {
+        msg-result "($re2cout) outdated"
+      }
     }
   }
 }
@@ -168,6 +184,20 @@ cc-with {-lang c++} {
     set csize($type) [cc-check-sizeof $type]
   }
   set csize(voidp) [cc-check-sizeof "void *"]
+  cc-with {-includes sys/types.h} {
+    set have_off_t [cc-check-types "off_t"]
+    if {$have_off_t} {
+      set csize(off_t) [cc-check-sizeof "off_t"]
+    }
+  }
+  if {$csize(long) == $csize(voidp)} {
+    define WORD_FMT "l"
+  } elseif {$have_long_long && $csize(long long) == $csize(voidp)} {
+    define WORD_FMT "ll"
+  } else {
+    define WORD_FMT ""
+  }
+  cc-check-includes dirent.h
   # -iquote vs. -I
   set iquote [check-tmp-flags "-iquote"]
   define OPT ""
@@ -241,13 +271,19 @@ proc test-rule {src} {
 }
 
 def-int-type Word unsigned $csize(voidp)
+def-int-type Word8 unsigned 1
 def-int-type Word16 unsigned 2
 def-int-type Word32 unsigned 4
 def-int-type Word64 unsigned 8
 def-int-type Int signed $csize(voidp)
+def-int-type Int8 signed 1
 def-int-type Int16 signed 2
 def-int-type Int32 signed 4
 def-int-type Int64 signed 8
+
+if {$have_off_t} {
+  def-int-type Offset signed $csize(off_t)
+}
 
 define BUILDDIR $builddir
 define BINDIR $bindir
@@ -360,7 +396,6 @@ if {[file exists $postconf]} {
 make-config-header adlib/config-defs.h -auto USE_* 
 make-template cnf/config.h.in adlib/config.h
 make-template Makefile.in Makefile
-
 
 if {[file exists $postsetup]} {
   source $postsetup

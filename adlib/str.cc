@@ -6,6 +6,7 @@ Str *Str::chomp() {
     _len--;
   if (_len > 0 && _data[_len - 1] == '\r')
     _len--;
+  _data[_len] = '\0';
   return this;
 }
 
@@ -21,8 +22,8 @@ StrArr *Str::split(const char *s, Word n) {
   parts->add(_len);
   StrArr *result = new StrArr(parts->len() - 1);
   for (Word i = 1; i < parts->len(); i++) {
-    Word begin = D(parts)[i - 1] + n;
-    Word end = D(parts)[i];
+    Word begin = parts->at(i-1) + n;
+    Word end = parts->at(i);
     result->add(new Str(_data + begin, end - begin));
   }
   return result;
@@ -57,17 +58,19 @@ StrArr *Str::split(const char *s) {
 StrArr *Str::splitLines() {
   StrArr *result = split('\n');
   for (Word i = 0; i < result->len(); i++) {
-    D(result)[i]->chomp();
+    result->at(i)->chomp();
   }
   return result;
 }
 
 Str *StrJoin(StrArr *arr, const char *sep, Word n) {
+  if (arr->len() == 0)
+    return new Str();
   Str *result = new Str(arr->len() * (n + 1));
-  result->add(D(arr)[0]);
+  result->add(arr->first());
   for (Word i = 1; i < arr->len(); i++) {
     result->add(sep, n);
-    result->add(D(arr)[i]);
+    result->add(arr->at(i));
   }
   return result;
 }
@@ -84,32 +87,32 @@ Str *StrJoin(StrArr *arr, Str *sep) {
   return StrJoin(arr, sep->c_str(), sep->len());
 }
 
-bool Str::startsWith(const char *s, Word n) {
+bool Str::starts_with(const char *s, Word n) {
   if (n > _len)
     return false;
   return memcmp(_data, s, n) == 0;
 }
 
-bool Str::startsWith(const char *s) {
-  return startsWith(s, strlen(s));
+bool Str::starts_with(const char *s) {
+  return starts_with(s, strlen(s));
 }
 
-bool Str::startsWith(Str *str) {
-  return startsWith(str->c_str(), str->len());
+bool Str::starts_with(Str *str) {
+  return starts_with(str->c_str(), str->len());
 }
 
-bool Str::endsWith(const char *s, Word n) {
+bool Str::ends_with(const char *s, Word n) {
   if (n > _len)
     return false;
   return memcmp(_data + _len - n, s, n) == 0;
 }
 
-bool Str::endsWith(const char *s) {
-  return endsWith(s, strlen(s));
+bool Str::ends_with(const char *s) {
+  return ends_with(s, strlen(s));
 }
 
-bool Str::endsWith(Str *str) {
-  return endsWith(str->c_str(), str->len());
+bool Str::ends_with(Str *str) {
+  return ends_with(str->c_str(), str->len());
 }
 
 int Cmp(Str *str1, Str *str2) {
@@ -123,6 +126,10 @@ int Cmp(Str *str1, Str *str2) {
       result = 1;
   }
   return result;
+}
+
+int StrCmp(Str *str1, Str *str2) {
+  return Cmp(str1, str2);
 }
 
 bool Str::eq(const char *s, Word n) {
@@ -140,12 +147,12 @@ bool Str::eq(Str *str) {
 }
 
 Str *Str::substr(Word start, Word count) {
-  require(start + count < _len, "index out of range");
+  require(start + count <= _len, "index out of range");
   return new Str(_data + start, count);
 }
 
 Word Str::find(char ch, Word from) {
-  require(from < _len, "index out of range");
+  require(from <= _len, "index out of range");
   for (Word i = from; i < _len; i++) {
     if (_data[i] == ch)
       return i;

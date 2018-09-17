@@ -39,15 +39,14 @@ class Map : public GC {
 
   public:
   class Each {
-private:
+    private:
     Map *_map;
     Word _i;
     void skip() {
       while (_i < _map->_size && _map->_state[_i] != SLOT_OCCUPIED)
         _i++;
     }
-
-public:
+    public:
     Each(Map *map) {
       _map = map;
       _i = 0;
@@ -79,32 +78,38 @@ public:
   };
   Map(CmpFunc(K, cmp), HashFunc(K, hash));
   Map();
-  Map(Map *map, bool copy = true);
+  Map(Map<K, V> *map, bool copy = true);
+  Map(Arr<K> *keys, Arr<V> *values);
+  Map(Arr<K> *keys, Arr<V> *values, CmpFunc(K, cmp), HashFunc(K, hash));
   Map<K, V> *clone() {
     return new Map(this);
   }
   Word count() {
     return _count;
   }
-  void add(K key, V value, bool replace = false);
-  void add(Assoc<K, V> assoc, bool replace = false) {
+  Map<K, V> *add(K key, V value, bool replace = false);
+  Map<K, V> *add(Assoc<K, V> assoc, bool replace = false) {
     add(assoc.key, assoc.value, replace);
+    return this;
   }
-  void add(Arr<Assoc<K, V> > *arr, bool replace = false);
+  Map<K, V> *add(Arr<Assoc<K, V> > *arr, bool replace = false);
+  Map<K, V> *add(Arr<K> *keys, Arr<V> *values, bool replace = false);
   bool remove(K key);
   bool contains(K key);
   V *find(K key);
   V get(K key, V if_absent);
+  V get(K key);
+  V at(K key);
   Arr<K> *keys();
   Arr<V> *values();
   Arr<Assoc<K, V> > *pairs();
   bool eq(Map<K, V> *that);
   Map<K, V> *union_with(Map<K, V> *that, bool replace = false);
-  void union_in_place(Map<K, V> *that, bool replace = false);
+  Map<K, V> *union_in_place(Map<K, V> *that, bool replace = false);
   Map<K, V> *intersect_with(Map<K, V> *that);
-  void intersect_in_place(Map<K, V> *that);
+  Map<K, V> *intersect_in_place(Map<K, V> *that);
   Map<K, V> *diff_with(Map<K, V> *that);
-  void diff_in_place(Map<K, V> *that);
+  Map<K, V> *diff_in_place(Map<K, V> *that);
   template <typename A, typename F>
   A fold(A init, F foldfunc);
   template <typename V2, typename F>
@@ -154,6 +159,27 @@ Map<K, V>::Map() {
 }
 
 template <typename K, typename V>
+Map<K, V>::Map(Arr<K> *keys, Arr<V> *values) {
+  resize(_minsize);
+  _count = 0;
+  _deleted = 0;
+  _cmp = Cmp;
+  _hash = Hash;
+  add(keys, values);
+}
+
+template <typename K, typename V>
+Map<K, V>::Map(Arr<K> *keys, Arr<V> *values,
+               CmpFunc(K, cmp), HashFunc(K, hash)) {
+  resize(_minsize);
+  _count = 0;
+  _deleted = 0;
+  _cmp = cmp;
+  _hash = hash;
+  add(keys, values);
+}
+
+template <typename K, typename V>
 Map<K, V>::Map(Map<K, V> *map, bool copy) {
   _cmp = map->_cmp;
   _hash = map->_hash;
@@ -192,16 +218,27 @@ void Map<K, V>::uncheckedAdd(K key, V value, bool replace) {
 }
 
 template <typename K, typename V>
-void Map<K, V>::add(K key, V value, bool replace) {
+Map<K, V> *Map<K, V>::add(K key, V value, bool replace) {
   if ((_count + _deleted) * 3 / 2 >= _size)
     rebuild();
   uncheckedAdd(key, value, replace);
+  return this;
 }
 
 template <typename K, typename V>
-void Map<K, V>::add(Arr<Assoc<K, V> > *arr, bool replace) {
+Map<K, V> *Map<K, V>::add(Arr<Assoc<K, V> > *arr, bool replace) {
   for (Word i = 0; i < arr->len(); i++)
-    add(arr->item(i));
+    add(arr->at(i));
+  return this;
+}
+
+template <typename K, typename V>
+Map<K, V> *Map<K, V>::add(Arr<K> *keys, Arr<V> *values, bool replace) {
+  require(keys->len() == values->len(), "mismatched array sizes");
+  for (Word i = 0; i < keys->len(); i++) {
+    add(keys->at(i), values->at(i));
+  }
+  return this;
 }
 
 template <typename K, typename V>
@@ -245,6 +282,25 @@ V Map<K, V>::get(K key, V if_absent) {
 }
 
 template <typename K, typename V>
+V Map<K, V>::get(K key) {
+  V *result = find(key);
+  if (!result) {
+    V val;
+    memset(val, 0, sizeof(val));
+    return val;
+  }
+  return *result;
+}
+
+template <typename K, typename V>
+V Map<K, V>::at(K key) {
+  V *result = find(key);
+  require(result != NULL, "key not found");
+  return *result;
+}
+
+
+template <typename K, typename V>
 bool Map<K, V>::contains(K key) {
   return find(key) != NULL;
 }
@@ -284,31 +340,29 @@ Arr<Assoc<K, V> > *Map<K, V>::pairs() {
 }
 
 template <typename K, typename V>
-void Map<K, V>::union_in_place(Map<K, V> *that, bool replace) {
+Map<K, V> *Map<K, V>::union_in_place(Map<K, V> *that, bool replace) {
   for (Each it(that); it; it++) {
     add(it.key(), it.value(), replace);
   }
+  return this;
 }
 
 template <typename K, typename V>
 Map<K, V> *Map<K, V>::union_with(Map<K, V> *that, bool replace) {
-  Map<K, V> *result = clone();
-  result->union_in_place(that, replace);
-  return result;
+  return clone()->union_in_place(that, replace);
 }
 
 template <typename K, typename V>
-void Map<K, V>::diff_in_place(Map<K, V> *that) {
+Map<K, V> *Map<K, V>::diff_in_place(Map<K, V> *that) {
   for (Each it(that); it; it++) {
     remove(it.key());
   }
+  return this;
 }
 
 template <typename K, typename V>
 Map<K, V> *Map<K, V>::diff_with(Map<K, V> *that) {
-  Map<K, V> *result = clone();
-  result->diff_in_place(that);
-  return result;
+  return clone()->diff_in_place(that);
 }
 
 template <typename K, typename V>
@@ -322,9 +376,10 @@ Map<K, V> *Map<K, V>::intersect_with(Map<K, V> *that) {
 }
 
 template <typename K, typename V>
-void Map<K, V>::intersect_in_place(Map<K, V> *that) {
+Map<K, V> *Map<K, V>::intersect_in_place(Map<K, V> *that) {
   Map<K, V> *tmp = intersect_with(that);
   *this = *tmp;
+  return this;
 }
 
 template <typename K, typename V>

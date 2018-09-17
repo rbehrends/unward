@@ -100,15 +100,17 @@ public:
   Arr *clone() {
     return new Arr<T>(this);
   }
-  void expand(Word newlen) {
+  Arr<T> *expand(Word newlen) {
     if (newlen > _cap)
       resize(nextPow2(newlen));
+    return this;
   }
-  void shrink(bool fit = true) {
+  Arr<T> *shrink(bool fit = true) {
     if (_len != _cap) {
       if (fit || _len * 3 / 2 + 1 < _cap)
         resize(_len);
     }
+    return this;
   }
   Arr<T> *add(T item) {
     expand(_len + 1);
@@ -124,15 +126,16 @@ public:
   Arr<T> *add(Arr<T> *other) {
     return add(other->_data, other->_len);
   }
-  void pop(Word n = 1) {
+  Arr<T> *pop(Word n = 1) {
     if (n > _len)
       n = _len;
     memset(_data + _len - n, 0, n * sizeof(T));
     _len -= n;
+    return this;
   }
-  void remove(Word at);
-  void remove(Word start, Word count);
-  void fill(Word start, Word count, T value);
+  Arr<T> *remove(Word at);
+  Arr<T> *remove(Word start, Word count);
+  Arr<T> *fill(Word start, Word count, T value);
   Arr<T> *subarr(Word start, Word count);
   T shift();
   T first() {
@@ -142,14 +145,6 @@ public:
   T last() {
     require(_len > 0, "last element of empty array");
     return _data[_len - 1];
-  }
-  Arr<T> &operator<<(T item) {
-    add(item);
-    return *this;
-  }
-  Arr<T> &operator<<(Arr<T> *arr) {
-    add(arr);
-    return *this;
   }
   Word len() {
     return _len;
@@ -162,7 +157,7 @@ public:
     require(i < _len, "index out of range");
     return _data[i];
   }
-  T &operator[](Word i) {
+  T &at(Word i) {
     require(i < _len, "index out of range");
     return _data[i];
   }
@@ -172,21 +167,21 @@ public:
   template <typename U, typename F>
   Arr<U> *map(F mapfunc);
   template <typename F>
-  void map_in_place(F mapfunc);
+  Arr<T> *map_in_place(F mapfunc);
   template <typename U, typename F>
   Arr<U> *mapi(F mapfunc);
   template <typename F>
-  void mapi_in_place(F mapfunc);
+  Arr<T> *mapi_in_place(F mapfunc);
   template <typename F>
   Arr<T> *filter(F filterfunc);
   template <typename F>
-  void filter_in_place(F filterfunc);
+  Arr<T> *filter_in_place(F filterfunc);
   template <typename A, typename F>
   A fold(A init, F foldfunc);
   template <typename F>
   Arr<T> *sort(F cmpfunc);
   template <typename F>
-  void sort_in_place(F cmpfunc);
+  Arr<T> *sort_in_place(F cmpfunc);
   template <typename F>
   void iter(F iterfunc);
   template <typename F>
@@ -215,10 +210,11 @@ Arr<T>::Arr(const D *data, D sentinel, F initfunc) {
 
 template <typename T>
 template <typename F>
-void Arr<T>::mapi_in_place(F mapfunc) {
+Arr<T> *Arr<T>::mapi_in_place(F mapfunc) {
   for (Word i = 0; i < _len; i++) {
     _data[i] = mapfunc(i, _data[i]);
   }
+  return this;
 }
 
 template <typename T>
@@ -234,10 +230,11 @@ Arr<U> *Arr<T>::mapi(F mapfunc) {
 
 template <typename T>
 template <typename F>
-void Arr<T>::map_in_place(F mapfunc) {
+Arr<T> *Arr<T>::map_in_place(F mapfunc) {
   for (Word i = 0; i < _len; i++) {
     _data[i] = mapfunc(_data[i]);
   }
+  return this;
 }
 
 template <typename T>
@@ -253,7 +250,7 @@ Arr<U> *Arr<T>::map(F mapfunc) {
 
 template <typename T>
 template <typename F>
-void Arr<T>::filter_in_place(F filterfunc) {
+Arr<T> *Arr<T>::filter_in_place(F filterfunc) {
   Word p = 0;
   for (Word i = 0; i < _len; i++) {
     if (filterfunc(_data[i]))
@@ -261,14 +258,13 @@ void Arr<T>::filter_in_place(F filterfunc) {
   }
   pop(_len - p);
   shrink(false);
+  return this;
 }
 
 template <typename T>
 template <typename F>
 Arr<T> *Arr<T>::filter(F filterfunc) {
-  Arr<T> *result = clone();
-  result->filter_in_place(filterfunc);
-  return result;
+  return clone()->filter_in_place(filterfunc);
 }
 
 template <typename T>
@@ -289,7 +285,7 @@ void Arr<T>::iteri(F iterfunc) {
 
 template <typename T>
 template <typename F>
-void Arr<T>::sort_in_place(F cmpfunc) {
+Arr<T> *Arr<T>::sort_in_place(F cmpfunc) {
   T *in = (T *) GC_MALLOC(sizeof(T) * _len);
   T *out = (T *) GC_MALLOC(sizeof(T) * _len);
   memcpy(in, _data, sizeof(T) * _len);
@@ -323,14 +319,13 @@ void Arr<T>::sort_in_place(F cmpfunc) {
   }
   _data = in;
   _cap = _len;
+  return this;
 }
 
 template <typename T>
 template <typename F>
 Arr<T> *Arr<T>::sort(F cmpfunc) {
-  Arr<T> *result = clone();
-  result->sort_in_place(cmpfunc);
-  return result;
+  return clone()->sort_in_place(cmpfunc);
 }
 
 template <typename T>
@@ -354,22 +349,23 @@ bool Arr<T>::eq(Arr<T> *that) {
 }
 
 template <typename T>
-void Arr<T>::remove(Word start, Word count) {
+Arr<T> *Arr<T>::remove(Word start, Word count) {
   require(start + count <= _len, "index out of range");
   Word end = start + count;
   memmove(_data + start, _data + end, sizeof(T) * (_len - end));
   memset(_data + _len - count, 0, sizeof(T) * count);
   _len -= count;
-  shrink(false);
+  return shrink(false);
 }
 
 template <typename T>
-void Arr<T>::fill(Word start, Word count, T value) {
+Arr<T> *Arr<T>::fill(Word start, Word count, T value) {
   require(start + count <= _len, "index out of range");
   Word end = start + count;
   for (Word i = start; i < end; i++) {
     _data[i] = value;
   }
+  return this;
 }
 
 template <typename T>
