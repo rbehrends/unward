@@ -1,16 +1,28 @@
 #pragma once
 
+#include "adlib/bitset.h"
+
 #include "lexer.h"
 
-struct InlineFunc : public GC {
+struct FuncSpec;
+
+typedef Arr<FuncSpec *> FuncList;
+typedef Map<Str *, FuncSpec *> FuncMap;
+
+struct FuncSpec : public GC {
+  Word index;
   SourceFile *source;
   Str *name;
+  FuncList *calls;
   Word start, end;
   Word namepos;
 };
 
-typedef Arr<InlineFunc *> InlineList;
+typedef Arr<Word> PosList;
 
-InlineList *FindInlineFunctions(SourceFile *source);
-InlineList *FindInlineFunctions(SourceList *sources);
-
+FuncList *FindInlineFunctions(SourceFile *source);
+FuncList *FindInlineFunctions(SourceList *sources);
+void FindCalls(FuncList *funcs);
+BitMatrix *BuildCallGraph(FuncList *funcs);
+FuncList *FindAllCallers(BitMatrix *callgraph, FuncList *funcs, StrArr *base);
+PosList *FindCalls(FuncMap *funcmap, SourceFile *source, Word start, Word end);

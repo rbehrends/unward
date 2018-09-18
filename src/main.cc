@@ -1,5 +1,7 @@
 #include "adlib/lib.h"
 #include "adlib/map.h"
+#include "adlib/set.h"
+#include "adlib/bitset.h"
 
 #include "lexer.h"
 #include "analyzer.h"
@@ -61,9 +63,10 @@ void PrintTokenList(TokenList *tokens) {
     printf("%s: %s\n", SymbolNames[token.sym], token.str->c_str());
   }
 }
-void PrintInlineList(InlineList *funcs) {
+void PrintFuncList(FuncList *funcs) {
   for (Word i = 0; i < funcs->len(); i++) {
-    printf("%s\n", funcs->item(i)->name->c_str());
+    FuncSpec *func = funcs->at(i);
+    PrintLn(func->name);
   }
 }
 
@@ -93,6 +96,9 @@ void Main() {
       InputSources->add(source);
     }
   }
-  InlineList *funcs = FindInlineFunctions(InputSources);
-  PrintInlineList(funcs);
+  FuncList *funcs = FindInlineFunctions(InputSources);
+  FindCalls(funcs);
+  BitMatrix *callgraph = BuildCallGraph(funcs);
+  funcs = FindAllCallers(callgraph, funcs, A("PTR_BAG", "CONST_PTR_BAG"));
+  PrintFuncList(funcs);
 }
