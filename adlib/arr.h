@@ -2,7 +2,7 @@
 
 template <typename T>
 class Arr : public GC {
-  private:
+private:
   Word _len;
   Word _cap;
   T *_data;
@@ -23,13 +23,13 @@ class Arr : public GC {
     memcpy(_data, p, _len * sizeof(T));
   }
 
-  public:
+public:
   class Each {
-private:
+  private:
     Arr *_arr;
     Word _i;
 
-public:
+  public:
     Each(Arr *arr) {
       _arr = arr;
       _i = 0;

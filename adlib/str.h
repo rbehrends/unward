@@ -5,7 +5,7 @@ class Str;
 typedef Arr<Str *> StrArr;
 
 class Str : public GC {
-  private:
+private:
   Word _len;
   Word _cap;
   char *_data;
@@ -30,13 +30,13 @@ class Str : public GC {
     _data[len] = '\0';
   }
 
-  public:
+public:
   class Each {
-private:
+  private:
     Str *_str;
     Word _i;
 
-public:
+  public:
     Each(Str *str) {
       _str = str;
       _i = 0;

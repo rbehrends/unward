@@ -27,8 +27,8 @@ void PrintErrLn(const char *str);
 void PrintErrLn(Int i);
 
 Str *Pwd();
-bool ChDir(Str *path); 
-bool ChDir(const char *path); 
+bool ChDir(Str *path);
+bool ChDir(const char *path);
 StrArr *ReadDir(const char *path);
 StrArr *ReadDir(Str *path);
 StrArr *ReadDir(const char *path);
@@ -51,7 +51,7 @@ struct FileInfo : PtrFreeGC {
 };
 
 FileInfo *FileStat(Str *path);
-bool FileStat(FileInfo & info, const char *path, bool follow_links = false);
-bool FileStat(FileInfo & info, Str *path, bool follow_links = false);
+bool FileStat(FileInfo &info, const char *path, bool follow_links = false);
+bool FileStat(FileInfo &info, Str *path, bool follow_links = false);
 FileInfo *FileStat(const char *path, bool follow_links = false);
 FileInfo *FileStat(Str *path, bool follow_links = false);

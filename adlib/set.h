@@ -8,7 +8,7 @@
 
 template <typename T>
 class Set : public GC {
-  private:
+private:
   static const Word _minsize = 8;
   Word _count;
   Word _size;
@@ -29,9 +29,9 @@ class Set : public GC {
     return hash * 5 + 1;
   }
 
-  public:
+public:
   class Each {
-private:
+  private:
     Set *_set;
     Word _i;
     void skip() {
@@ -39,7 +39,7 @@ private:
         _i++;
     }
 
-public:
+  public:
     Each(Set *set) {
       _set = set;
       _i = 0;

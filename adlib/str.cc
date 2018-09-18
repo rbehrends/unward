@@ -22,7 +22,7 @@ StrArr *Str::split(const char *s, Word n) {
   parts->add(_len);
   StrArr *result = new StrArr(parts->len() - 1);
   for (Word i = 1; i < parts->len(); i++) {
-    Word begin = parts->at(i-1) + n;
+    Word begin = parts->at(i - 1) + n;
     Word end = parts->at(i);
     result->add(new Str(_data + begin, end - begin));
   }
@@ -163,7 +163,9 @@ Word Str::find(char ch, Word from) {
 Word Str::find(const char *s, Word n, Word from) {
   require(n > 0, "empty string");
   require(from < _len, "index out of range");
-  Word end = _len - n;
+  if (n > _len)
+    return NOWHERE;
+  Word end = _len - n + 1;
   char ch = s[0];
   for (Word i = from; i < end; i++) {
     if (_data[i] == ch) {
@@ -192,6 +194,8 @@ Word Str::rfind(char ch) {
 
 Word Str::rfind(const char *s, Word n) {
   require(n > 0, "empty string");
+  if (n > _len)
+    return NOWHERE;
   Word end = _len - n;
   char ch = s[0];
   for (Int i = end - 1; i >= 0; i--) {

@@ -1,7 +1,7 @@
 #include "lib.h"
 #include "bitset.h"
 
-#define MEMSIZE(n) ((n+31) >> 5)
+#define MEMSIZE(n) ((n + 31) >> 5)
 
 static inline Word bitcount(Word32 word) {
   word = word - ((word >> 1) & 0x55555555);
@@ -52,7 +52,7 @@ BitSet *BitSet::complement_in_place() {
   Word n = _bits & 32;
   if (n != 0) {
     // zero top bits
-    _data[_words-1] &= ((1 << n) - 1);
+    _data[_words - 1] &= ((1 << n) - 1);
   }
   return this;
 }
@@ -68,7 +68,7 @@ BitSet *BitSet::union_in_place(BitSet *that) {
   return this;
 }
 
-BitSet * BitSet::union_with(BitSet *that) {
+BitSet *BitSet::union_with(BitSet *that) {
   BitSet *result = clone();
   result->union_in_place(that);
   return result;
@@ -81,7 +81,7 @@ BitSet *BitSet::intersect_in_place(BitSet *that) {
   return this;
 }
 
-BitSet * BitSet::intersect_with(BitSet *that) {
+BitSet *BitSet::intersect_with(BitSet *that) {
   return clone()->intersect_in_place(that);
 }
 
@@ -92,7 +92,7 @@ BitSet *BitSet::diff_in_place(BitSet *that) {
   return this;
 }
 
-BitSet * BitSet::diff_with(BitSet *that) {
+BitSet *BitSet::diff_with(BitSet *that) {
   return clone()->diff_in_place(that);
 }
 
@@ -114,7 +114,7 @@ bool IsMatrix(BitMatrix *mat) {
   if (mat->len() == 0 || mat->at(0)->len() == 0)
     return false;
   for (Word i = 1; i < mat->len(); i++) {
-    if (mat->at(i-1)->len() != mat->at(i)->len()) {
+    if (mat->at(i - 1)->len() != mat->at(i)->len()) {
       return false;
     }
   }
@@ -138,6 +138,7 @@ BitMatrix *Transpose(BitMatrix *mat) {
 }
 
 BitMatrix *TransitiveClosure(BitMatrix *mat) {
+  // Floyd-Warshall algorithm
   require(IsMatrix(mat), "not a proper matrix");
   Word rows = mat->len();
   Word cols = mat->at(0)->len();

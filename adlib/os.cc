@@ -278,7 +278,8 @@ StrArr *ReadDir(Str *path) {
 
 static void WalkDir(StrArr *acc, const char *path, bool with_dirs) {
   StrArr *files = ReadDir(path);
-  if (!files) return;
+  if (!files)
+    return;
   FileInfo info;
   for (Word i = 0; i < files->len(); i++) {
     Str *newpath = new Str(path);

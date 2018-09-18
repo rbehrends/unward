@@ -19,11 +19,11 @@ void Main() {
   BitSet *set2 = new BitSet(256);
   for (Word i = 0; i < 200; i += 2) {
     set->set(i);
-    set2->set(i+1);
+    set2->set(i + 1);
   }
   for (Word i = 0; i < 200; i += 4) {
     set2->set(i);
-    set2->clear(i+1);
+    set2->clear(i + 1);
   }
   Check(set->count() == 100, "bitset count");
   Check(set->union_with(set2)->count() == 150, "bitset union");
@@ -45,9 +45,9 @@ void Main() {
   CHECK_MAT(mat2, row == col, "transitive closure 1");
   mat = MakeBitMatrix(n, n);
   for (Word i = 1; i < n; i++) {
-    mat->at(i-1)->set(i);
+    mat->at(i - 1)->set(i);
   }
-  mat->at(n-1)->set(0);
+  mat->at(n - 1)->set(0);
   mat2 = TransitiveClosure(mat);
   CHECK_MAT(mat2, true, "transitive closure 2");
   mat = MakeBitMatrix(2, 2);
@@ -57,4 +57,3 @@ void Main() {
   mat2 = TransitiveClosure(mat);
   CHECK_MAT(mat2, mat->at(row)->test(col), "transitive closure 3");
 }
-

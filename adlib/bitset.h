@@ -14,8 +14,13 @@ private:
   void init(Word n);
   void resize(Word n);
   void expand(Word n);
-  Word index(Word n) { return n >> 5; }
-  Word bit(Word n) { return 1 << (n & 31); }
+  Word index(Word n) {
+    return n >> 5;
+  }
+  Word bit(Word n) {
+    return 1 << (n & 31);
+  }
+
 public:
   class Each {
   private:
@@ -77,15 +82,15 @@ public:
     return new BitSet(this);
   }
   void set(Word i) {
-    require (i < _bits, "index out of range");
+    require(i < _bits, "index out of range");
     _data[index(i)] |= bit(i);
   }
   void clear(Word i) {
-    require (i < _bits, "index out of range");
+    require(i < _bits, "index out of range");
     _data[index(i)] &= ~bit(i);
   }
   bool test(Word i) {
-    require (i < _bits, "index out of range");
+    require(i < _bits, "index out of range");
     return (_data[index(i)] & bit(i)) != 0;
   }
   Word count();

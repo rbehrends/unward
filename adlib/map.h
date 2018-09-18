@@ -14,7 +14,7 @@ struct Assoc : public GC {
 
 template <typename K, typename V>
 class Map : public GC {
-  private:
+private:
   static const Word _minsize = 8;
   Word _count;
   Word _size;
@@ -37,16 +37,17 @@ class Map : public GC {
     return hash * 5 + 1;
   }
 
-  public:
+public:
   class Each {
-    private:
+  private:
     Map *_map;
     Word _i;
     void skip() {
       while (_i < _map->_size && _map->_state[_i] != SLOT_OCCUPIED)
         _i++;
     }
-    public:
+
+  public:
     Each(Map *map) {
       _map = map;
       _i = 0;
@@ -169,8 +170,8 @@ Map<K, V>::Map(Arr<K> *keys, Arr<V> *values) {
 }
 
 template <typename K, typename V>
-Map<K, V>::Map(Arr<K> *keys, Arr<V> *values,
-               CmpFunc(K, cmp), HashFunc(K, hash)) {
+Map<K, V>::Map(
+    Arr<K> *keys, Arr<V> *values, CmpFunc(K, cmp), HashFunc(K, hash)) {
   resize(_minsize);
   _count = 0;
   _deleted = 0;
@@ -298,7 +299,6 @@ V Map<K, V>::at(K key) {
   require(result != NULL, "key not found");
   return *result;
 }
-
 
 template <typename K, typename V>
 bool Map<K, V>::contains(K key) {

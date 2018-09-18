@@ -1,14 +1,14 @@
 #pragma once
 
 class GC {
-  public:
+public:
   void *operator new(size_t size);
   void operator delete(void *p) {
   }
 };
 
 class PtrFreeGC {
-  public:
+public:
   void *operator new(size_t size);
   void operator delete(void *p) {
   }
