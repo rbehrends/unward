@@ -51,7 +51,7 @@ struct FileInfo : PtrFreeGC {
 };
 
 FileInfo *FileStat(Str *path);
-bool FileStat(FileInfo & info, const char *path);
-bool FileStat(FileInfo & info, Str *path);
-FileInfo *FileStat(const char *path);
-FileInfo *FileStat(Str *path);
+bool FileStat(FileInfo & info, const char *path, bool follow_links = false);
+bool FileStat(FileInfo & info, Str *path, bool follow_links = false);
+FileInfo *FileStat(const char *path, bool follow_links = false);
+FileInfo *FileStat(Str *path, bool follow_links = false);

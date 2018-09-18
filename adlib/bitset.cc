@@ -95,3 +95,60 @@ BitSet *BitSet::diff_in_place(BitSet *that) {
 BitSet * BitSet::diff_with(BitSet *that) {
   return clone()->diff_in_place(that);
 }
+
+BitMatrix *MakeBitMatrix(Word rows, Word cols) {
+  BitMatrix *result = new BitMatrix();
+  for (Word i = 0; i < rows; i++)
+    result->add(new BitSet(cols));
+  return result;
+}
+
+BitMatrix *Clone(BitMatrix *mat) {
+  BitMatrix *result = new BitMatrix(mat->len());
+  for (Word i = 0; i < mat->len(); i++)
+    result->add(mat->at(i)->clone());
+  return result;
+}
+
+bool IsMatrix(BitMatrix *mat) {
+  if (mat->len() == 0 || mat->at(0)->len() == 0)
+    return false;
+  for (Word i = 1; i < mat->len(); i++) {
+    if (mat->at(i-1)->len() != mat->at(i)->len()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+BitMatrix *Transpose(BitMatrix *mat) {
+  require(IsMatrix(mat), "not a proper matrix");
+  Word rows = mat->len();
+  Word cols = mat->at(0)->len();
+  BitMatrix *result = MakeBitMatrix(cols, rows);
+  for (Word col = 0; col < cols; col++) {
+    BitSet *result_row = result->at(col);
+    for (Word row = 0; row < rows; row++) {
+      if (mat->at(row)->test(col)) {
+        result_row->set(row);
+      }
+    }
+  }
+  return result;
+}
+
+BitMatrix *TransitiveClosure(BitMatrix *mat) {
+  require(IsMatrix(mat), "not a proper matrix");
+  Word rows = mat->len();
+  Word cols = mat->at(0)->len();
+  require(mat->len() == mat->at(0)->len(), "not a square matrix");
+  mat = Clone(mat);
+  for (Word col = 0; col < cols; col++) {
+    for (Word row = 0; row < rows; row++) {
+      if (mat->at(row)->test(col)) {
+        mat->at(row)->union_in_place(mat->at(col));
+      }
+    }
+  }
+  return mat;
+}

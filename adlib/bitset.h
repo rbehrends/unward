@@ -2,6 +2,10 @@
 
 #include "lib.h"
 
+class BitSet;
+
+typedef Arr<BitSet *> BitMatrix;
+
 class BitSet : public GC {
 private:
   Word _bits;
@@ -61,6 +65,9 @@ public:
     init(n);
     zero();
   }
+  Word len() {
+    return _bits;
+  }
   void zero();
   BitSet(BitSet *set) {
     init(set->_bits);
@@ -90,7 +97,12 @@ public:
   BitSet *intersect_in_place(BitSet *that);
   BitSet *diff_with(BitSet *that);
   BitSet *diff_in_place(BitSet *that);
+  friend BitMatrix *Transpose(BitMatrix *mat);
+  friend BitMatrix *TransitiveClosure(BitMatrix *mat);
 };
 
-
-typedef Arr<BitSet *> BitMatrix;
+BitMatrix *MakeBitMatrix(Word n, Word m);
+bool IsMatrix(BitMatrix *mat);
+BitMatrix *Clone(BitMatrix *mat);
+BitMatrix *Transpose(BitMatrix *mat);
+BitMatrix *TransitiveClosure(BitMatrix *mat);

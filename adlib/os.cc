@@ -205,10 +205,15 @@ bool ChDir(Str *path) {
   return ChDir(path->c_str());
 }
 
-bool FileStat(FileInfo &info, const char *path) {
+bool FileStat(FileInfo &info, const char *path, bool follow_links) {
   struct stat st;
-  if (stat(path, &st) < 0)
-    return false;
+  if (follow_links) {
+    if (lstat(path, &st) < 0)
+      return false;
+  } else {
+    if (stat(path, &st) < 0)
+      return false;
+  }
   memset(&info, 0, sizeof(info));
   if (S_ISDIR(st.st_mode)) {
     info.is_dir = true;
@@ -226,20 +231,20 @@ bool FileStat(FileInfo &info, const char *path) {
   return true;
 }
 
-bool FileStat(FileInfo &info, Str *path) {
-  return FileStat(info, path->c_str());
+bool FileStat(FileInfo &info, Str *path, bool follow_links) {
+  return FileStat(info, path->c_str(), follow_links);
 }
 
-FileInfo *FileStat(const char *path) {
+FileInfo *FileStat(const char *path, bool follow_links) {
   FileInfo info;
-  if (FileStat(info, path))
+  if (FileStat(info, path, follow_links))
     return new FileInfo(info);
   else
     return NULL;
 }
 
-FileInfo *FileStat(Str *path) {
-  return FileStat(path);
+FileInfo *FileStat(Str *path, bool follow_links) {
+  return FileStat(path, follow_links);
 }
 
 StrArr *ReadDir(const char *path) {
