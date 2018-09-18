@@ -13,6 +13,42 @@ void Error(Str *s) {
   exit(1);
 }
 
+struct AbsPath : public GC {
+  Str *_pwd;
+  AbsPath() {
+    _pwd = Pwd();
+  }
+  Str *operator()(Str *path) {
+    if (path->starts_with("/"))
+      return path;
+    else
+      return _pwd->clone()->add("/")->add(path);
+  }
+};
+
+StrArr *FindFiles(StrArr *paths) {
+  StrArr *result = new StrArr();
+  for (Word i = 0; i < paths->len(); i++) {
+    StrArr *files = ReadDirRecursive(paths->at(i));
+    result->add(files);
+  }
+  return result;
+#if 0
+  Str *prog = S("find");
+  AbsPath abspath;
+  StrArr *args = paths->map<Str *>(abspath);
+  args->add(A("-type", "f", "-print"));
+  StrArr *lines = ReadProcessLines(prog, args);
+  if (!lines)
+    return A();
+  for (Word i = 0; i < lines->len(); i++)
+    lines->item(i)->chomp();
+  if (lines->len() > 0 && lines->last()->len() == 0)
+    lines->pop();
+  return lines;
+#endif
+}
+
 // declarations
 
 typedef Map<Str *, SourceFile *> FileMap;
@@ -39,8 +75,11 @@ SourceList *InputSources;
 void Main() {
   GCVar(InputFiles, new FileMap());
   GCVar(InputSources, new SourceList());
-  for (Word i = 0; i < Args->len(); i++) {
-    Str *file = Args->item(i);
+  StrArr *files = FindFiles(Args);
+  for (Word i = 0; i < files->len(); i++) {
+    Str *file = files->at(i);
+    if (!file->ends_with(".h") && !file->ends_with(".c"))
+      continue;
     if (!InputFiles->contains(file)) {
       SourceFile *source = new SourceFile();
       source->filename = file;
@@ -55,5 +94,5 @@ void Main() {
     }
   }
   InlineList *funcs = FindInlineFunctions(InputSources);
-  // PrintInlineList(funcs);
+  PrintInlineList(funcs);
 }
