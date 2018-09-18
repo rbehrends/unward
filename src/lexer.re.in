@@ -111,12 +111,12 @@ bool Tokenize(SourceFile *source) {
     nl { PUSH_TOKEN(SymEOL); }
     "\\" sp* / nl { PUSH_TOKEN(SymWS); }
     sp+ { PUSH_TOKEN(SymWS); }
-    "#" sp*  "if" pparg / eol { PUSH_TOKEN(SymPPCond); }
-    "#" sp* "ifdef" pparg / eol { PUSH_TOKEN(SymPPCond); }
-    "#" sp* "ifndef" pparg / eol { PUSH_TOKEN(SymPPCond); }
-    "#" sp* "else" pparg / eol { PUSH_TOKEN(SymPPCond); }
-    "#" sp* "elif" pparg / eol { PUSH_TOKEN(SymPPCond); }
-    "#" sp* "endif" pparg / eol { PUSH_TOKEN(SymPPCond); }
+    "#" sp*  "if" pparg / eol { PUSH_TOKEN(SymPPIf); }
+    "#" sp* "ifdef" pparg / eol { PUSH_TOKEN(SymPPIf); }
+    "#" sp* "ifndef" pparg / eol { PUSH_TOKEN(SymPPIf); }
+    "#" sp* "else" pparg / eol { PUSH_TOKEN(SymPPElse); }
+    "#" sp* "elif" pparg / eol { PUSH_TOKEN(SymPPElif); }
+    "#" sp* "endif" pparg / eol { PUSH_TOKEN(SymPPEndif); }
     "#" sp* "define" pparg / eol { PUSH_TOKEN(SymPPDef); }
     "#" sp* "undefine" pparg / eol { PUSH_TOKEN(SymPPDef); }
     "#" any* / eol { PUSH_TOKEN(SymPPOther); }

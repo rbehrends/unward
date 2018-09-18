@@ -14,4 +14,4 @@ set keywords "auto break case char const continue default do double
   volatile while"
 
 set other "Ident Literal Op Semicolon LPar RPar LBrkt RBrkt LBrace
-  RBrace WS EOL Comment BAD PPCond PPDef PPOther EOF"
+  RBrace WS EOL Comment BAD PPIf PPElse PPElif PPEndif PPDef PPOther EOF"

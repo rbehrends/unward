@@ -137,8 +137,16 @@ void FindCalls(FuncMap *funcmap, FuncSpec *func) {
   }
 }
 
-void FindCalls(FuncList *funcs) {
+FuncMap *BuildFuncMap(FuncList *funcs) {
   FuncMap *funcmap = new FuncMap();
+  for (Word i = 0; i < funcs->len(); i++) {
+    funcmap->add(funcs->at(i)->name, funcs->at(i));
+  }
+  return funcmap;
+}
+
+void FindCalls(FuncList *funcs) {
+  FuncMap *funcmap = BuildFuncMap(funcs);
   for (Word i = 0; i < funcs->len(); i++) {
     funcmap->add(funcs->at(i)->name, funcs->at(i));
   }
@@ -177,6 +185,81 @@ FuncList *FindAllCallers(BitMatrix *callgraph, FuncList *funcs, StrArr* base) {
   for (Word i = 0; i < callgraph->len(); i++) {
     if (set->test(i)) {
       result->add(funcs->at(i));
+    }
+  }
+  return result;
+}
+
+SectionSpec *FindUnsafeSections(SourceFile *source) {
+  SectionSpec *sec = new SectionSpec();
+  TokenList *tokens = source->tokens;
+  Arr<bool> *prot_stack = new Arr<bool>();
+  bool prot = true;
+  sec->source = source;
+  sec->start = new PosList();
+  sec->end = new PosList();
+  for (Word i = 0; i < tokens->len(); i++) {
+    Token *token = &tokens->at(i);
+    switch (token->sym) {
+      case SymPPIf:
+        prot_stack->add(prot);
+        // Need to parse this properly
+        if (token->str->find("WARD_ENABLED") != NOWHERE) {
+          prot = false;
+          sec->start->add(i);
+        }
+        break;
+      case SymPPElse:
+        if (!prot) {
+          prot = true;
+          sec->end->add(i);
+        }
+        break;
+      case SymPPElif:
+        if (!prot) {
+          prot = true;
+          sec->end->add(i);
+        }
+      case SymPPEndif:
+        if (!prot && prot_stack->last()) {
+          sec->end->add(i);
+        }
+        prot = prot_stack->last();
+        prot_stack->pop();
+      default:
+        break;
+    }
+  }
+  if (sec->start->len() == 0)
+    return NULL;
+  ensure(sec->start->len() == sec->end->len(),
+    "ward sections did not match up");
+  return sec;
+}
+
+SectionList *FindUnsafeSections(SourceList *sources) {
+  SectionList *result = new SectionList();
+  for (Word i = 0; i < sources->len(); i++) {
+    SectionSpec *sec = FindUnsafeSections(sources->at(i));
+    if (sec)
+      result->add(sec);
+  }
+  return result;
+}
+
+StrSet *FindCalls(FuncMap *funcmap, SectionList *sections) {
+  StrSet *result = new StrSet();
+  for (Word i = 0; i < sections->len(); i++) {
+    SectionSpec *sec = sections->at(i);
+    TokenList *tokens = sec->source->tokens;
+    PosList *start = sec->start;
+    PosList *end = sec->end;
+    PosList *calls = new PosList();
+    for (Word j = 0; j < start->len(); j++) {
+      calls->add(FindCalls(funcmap, sec->source, start->at(j), end->at(j)));
+    }
+    for (Word j = 0; j < calls->len(); j++) {
+      result->add(tokens->at(calls->at(j)).str);
     }
   }
   return result;

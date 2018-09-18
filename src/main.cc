@@ -100,5 +100,10 @@ void Main() {
   FindCalls(funcs);
   BitMatrix *callgraph = BuildCallGraph(funcs);
   funcs = FindAllCallers(callgraph, funcs, A("PTR_BAG", "CONST_PTR_BAG"));
-  PrintFuncList(funcs);
+  SectionList *unprotected = FindUnsafeSections(InputSources);
+  for (Word i = 0; i < unprotected->len(); i++)
+    PrintLn(unprotected->at(i)->source->filename);
+  StrSet *funcnames = FindCalls(BuildFuncMap(funcs), unprotected);
+  // PrintFuncList(funcs);
+  PrintLn(S(funcnames, "\n"));
 }
