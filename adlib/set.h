@@ -8,6 +8,8 @@
 
 template <typename T>
 class Set : public GC {
+  template <typename U>
+  friend class Set;
 private:
   static const Int _minsize = 8;
   Int _count;

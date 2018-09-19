@@ -1,6 +1,4 @@
-#include "adlib/lib.h"
-#include "adlib/set.h"
-#include "adlib/map.h"
+#include "adlib.h"
 
 #include "lexer.h"
 #include "analyzer.h"
@@ -131,6 +129,7 @@ PosList *FindCalls(FuncMap *funcmap, SourceFile *source,
 void FindCalls(FuncMap *funcmap, FuncSpec *func) {
   PosList *callpositions =
     FindCalls(funcmap, func->source, func->start, func->end);
+  func->callpositions = callpositions;
   StrSet *callnames = new StrSet();
   for (Int i = 0; i < callpositions->len(); i++) {
     Int pos = callpositions->at(i);
@@ -214,7 +213,7 @@ FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, FuncList* base) {
 SectionSpec *FindUnsafeSections(SourceFile *source) {
   SectionSpec *sec = new SectionSpec();
   TokenList *tokens = source->tokens;
-  Arr<bool> *prot_stack = new Arr<bool>();
+  Int if_level = 0;
   bool prot = true;
   sec->source = source;
   sec->start = new PosList();
@@ -223,30 +222,34 @@ SectionSpec *FindUnsafeSections(SourceFile *source) {
     Token *token = &tokens->at(i);
     switch (token->sym) {
       case SymPPIf:
-        prot_stack->add(prot);
         // Need to parse this properly
         if (token->str->find("WARD_ENABLED") != NOWHERE) {
           prot = false;
+          if_level = 1;
           sec->start->add(i);
+        } else if (if_level > 0) {
+          if_level++;
         }
         break;
       case SymPPElse:
-        if (!prot) {
+        if (!prot && if_level == 1) {
           prot = true;
           sec->end->add(i);
         }
         break;
       case SymPPElif:
-        if (!prot) {
+        if (!prot && if_level == 1) {
           prot = true;
           sec->end->add(i);
         }
+        break;
       case SymPPEndif:
-        if (!prot && prot_stack->last()) {
+        if (!prot && if_level == 1) {
+          prot = true;
           sec->end->add(i);
         }
-        prot = prot_stack->last();
-        prot_stack->pop();
+        if (if_level > 0) if_level--;
+        break;
       default:
         break;
     }

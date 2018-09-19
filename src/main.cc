@@ -1,10 +1,8 @@
-#include "adlib/lib.h"
-#include "adlib/map.h"
-#include "adlib/set.h"
-#include "adlib/bitset.h"
+#include "adlib.h"
 
 #include "lexer.h"
 #include "analyzer.h"
+#include "rewrite.h"
 
 void Warning(Str *s) {
   printf("warning: %s\n", s->c_str());
@@ -101,7 +99,11 @@ void Main() {
   FuncList *funcs = FindInlineFunctions(InputSources);
   FindCalls(funcs);
   BitMatrix *calleegraph = BuildCallGraph(funcs, Callees);
-  funcs = FindAllCalls(calleegraph, funcs, A("PTR_BAG", "CONST_PTR_BAG"));
+  FuncList *wardfuncs =
+    FindAllCalls(calleegraph, funcs, A("PTR_BAG", "CONST_PTR_BAG"));
+  StrSet *wardfuncnames = new StrSet();
+  for (Int i = 0; i < wardfuncs->len(); i++)
+    wardfuncnames->add(wardfuncs->at(i)->name);
   SectionList *unprotected = FindUnsafeSections(InputSources);
   // for (Int i = 0; i < unprotected->len(); i++)
   //   PrintLn(unprotected->at(i)->source->filename);
@@ -114,5 +116,8 @@ void Main() {
     Str *name = indirect_used_funcs->at(i)->name;
     used_funcnames->add(name);
   }
+  used_funcnames->intersect_in_place(wardfuncnames);
   PrintLn(S(used_funcnames, "\n"));
+  SourceList *unsafe_sources = GenUnsafeCode(funcs, used_funcnames);
+  RewriteSourceFiles(unsafe_sources);
 }

@@ -105,6 +105,12 @@ public:
     return add(s, strlen(s));
   }
   Str *substr(Int start, Int count);
+  Str *range_incl(Int start, Int end) {
+    return substr(start, end - start + 1);
+  }
+  Str *range_excl(Int start, Int end) {
+    return substr(start, end - start);
+  }
   Str *chomp();
   Int find(Str *str, Int from = 0);
   Int find(char ch, Int from = 0);

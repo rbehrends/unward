@@ -8,6 +8,8 @@ struct FuncSpec;
 
 typedef Arr<FuncSpec *> FuncList;
 typedef Map<Str *, FuncSpec *> FuncMap;
+typedef Arr<Int> PosList;
+
 
 struct FuncSpec : public GC {
   Int index;
@@ -16,9 +18,9 @@ struct FuncSpec : public GC {
   FuncList *calls;
   Int start, end;
   Int namepos;
+  PosList *callpositions;
+  TokenList *unsafe_code;
 };
-
-typedef Arr<Int> PosList;
 
 struct SectionSpec : public GC {
   SourceFile *source;

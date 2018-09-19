@@ -2,22 +2,24 @@
 
 template <typename T>
 class Arr : public GC {
+  template <typename U>
+  friend class Arr;
 private:
-  Word _len;
-  Word _cap;
+  Int _len;
+  Int _cap;
   T *_data;
-  void resize(Word newcap) {
+  void resize(Int newcap) {
     T *_newdata = (T *) GC_MALLOC(newcap * sizeof(T));
     memcpy(_newdata, _data, _len * sizeof(T));
     _data = _newdata;
     _cap = newcap;
   }
-  void init(Word cap) {
+  void init(Int cap) {
     _len = 0;
     _cap = cap;
     _data = (T *) GC_MALLOC(cap * sizeof(T));
   }
-  void init(const T *p, Word cap) {
+  void init(const T *p, Int cap) {
     _len = _cap = cap;
     _data = (T *) GC_MALLOC(cap * sizeof(T));
     memcpy(_data, p, _len * sizeof(T));
@@ -27,14 +29,14 @@ public:
   class Each {
   private:
     Arr *_arr;
-    Word _i;
+    Int _i;
 
   public:
     Each(Arr *arr) {
       _arr = arr;
       _i = 0;
     }
-    Word index() {
+    Int index() {
       return _i;
     }
     operator bool() {
@@ -53,11 +55,11 @@ public:
       return _arr->_data[_i];
     }
   };
-  Arr(Word n, const T *data) {
+  Arr(Int n, const T *data) {
     init(data, n);
   }
   Arr(const T *data, T sentinel) {
-    Word n = 0;
+    Int n = 0;
     while (data[n] != sentinel)
       n++;
     init(data, n);
@@ -65,26 +67,26 @@ public:
   template <typename D, typename F>
   Arr(const D *data, D sentinel, F initfunc);
   template <typename D, typename F>
-  Arr(Word n, const D *data, F initfunc);
-  Arr(Word size) {
+  Arr(Int n, const D *data, F initfunc);
+  Arr(Int size) {
     init(size);
   }
-  Arr(Word size, T arg1) {
+  Arr(Int size, T arg1) {
     init(size);
     add(arg1);
   }
-  Arr(Word size, T arg1, T arg2) {
+  Arr(Int size, T arg1, T arg2) {
     init(size);
     add(arg1);
     add(arg2);
   }
-  Arr(Word size, T arg1, T arg2, T arg3) {
+  Arr(Int size, T arg1, T arg2, T arg3) {
     init(size);
     add(arg1);
     add(arg2);
     add(arg3);
   }
-  Arr(Word size, T arg1, T arg2, T arg3, T arg4) {
+  Arr(Int size, T arg1, T arg2, T arg3, T arg4) {
     init(size);
     add(arg1);
     add(arg2);
@@ -100,7 +102,7 @@ public:
   Arr *clone() {
     return new Arr<T>(this);
   }
-  Arr<T> *expand(Word newlen) {
+  Arr<T> *expand(Int newlen) {
     if (newlen > _cap)
       resize(nextPow2(newlen));
     return this;
@@ -117,7 +119,7 @@ public:
     _data[_len++] = item;
     return this;
   }
-  Arr<T> *add(const T *p, Word n) {
+  Arr<T> *add(const T *p, Int n) {
     expand(_len + n);
     memcpy(_data + _len, p, n * sizeof(T));
     _len += n;
@@ -126,17 +128,23 @@ public:
   Arr<T> *add(Arr<T> *other) {
     return add(other->_data, other->_len);
   }
-  Arr<T> *pop(Word n = 1) {
+  Arr<T> *pop(Int n = 1) {
     if (n > _len)
       n = _len;
     memset(_data + _len - n, 0, n * sizeof(T));
     _len -= n;
     return this;
   }
-  Arr<T> *remove(Word at);
-  Arr<T> *remove(Word start, Word count);
-  Arr<T> *fill(Word start, Word count, T value);
-  Arr<T> *subarr(Word start, Word count);
+  Arr<T> *remove(Int at);
+  Arr<T> *remove(Int start, Int count);
+  Arr<T> *fill(Int start, Int count, T value);
+  Arr<T> *subarr(Int start, Int count);
+  Arr<T> *range_incl(Int start, Int end) {
+    return subarr(start, end - start + 1);
+  }
+  Arr<T> *range_excl(Int start, Int end) {
+    return subarr(start, end - start);
+  }
   T shift();
   T first() {
     require(_len > 0, "last element of empty array");
@@ -146,18 +154,18 @@ public:
     require(_len > 0, "last element of empty array");
     return _data[_len - 1];
   }
-  Word len() {
+  Int len() {
     return _len;
   }
-  Word count() {
+  Int count() {
     return _len;
   }
   bool eq(Arr<T> *that);
-  T &item(Word i) {
+  T &item(Int i) {
     require(0 <= i && i < _len, "index out of range");
     return _data[i];
   }
-  T &at(Word i) {
+  T &at(Int i) {
     require(0 <= i && i < _len, "index out of range");
     return _data[i];
   }
@@ -190,20 +198,20 @@ public:
 
 template <typename T>
 template <typename D, typename F>
-Arr<T>::Arr(Word n, const D *data, F initfunc) {
+Arr<T>::Arr(Int n, const D *data, F initfunc) {
   init(n);
-  for (Word i = 0; i < n; i++) {
+  for (Int i = 0; i < n; i++) {
     add(initfunc(data[i]));
   }
 }
 template <typename T>
 template <typename D, typename F>
 Arr<T>::Arr(const D *data, D sentinel, F initfunc) {
-  Word n = 0;
+  Int n = 0;
   while (data[n] != sentinel)
     n++;
   init(n);
-  for (Word i = 0; i < n; i++) {
+  for (Int i = 0; i < n; i++) {
     add(initfunc(data[i]));
   }
 }
@@ -211,7 +219,7 @@ Arr<T>::Arr(const D *data, D sentinel, F initfunc) {
 template <typename T>
 template <typename F>
 Arr<T> *Arr<T>::mapi_in_place(F mapfunc) {
-  for (Word i = 0; i < _len; i++) {
+  for (Int i = 0; i < _len; i++) {
     _data[i] = mapfunc(i, _data[i]);
   }
   return this;
@@ -222,7 +230,7 @@ template <typename U, typename F>
 Arr<U> *Arr<T>::mapi(F mapfunc) {
   Arr<U> *result = new Arr<U>(_cap);
   result->_len = _len;
-  for (Word i = 0; i < _len; i++) {
+  for (Int i = 0; i < _len; i++) {
     result->_data[i] = mapfunc(i, _data[i]);
   }
   return result;
@@ -231,7 +239,7 @@ Arr<U> *Arr<T>::mapi(F mapfunc) {
 template <typename T>
 template <typename F>
 Arr<T> *Arr<T>::map_in_place(F mapfunc) {
-  for (Word i = 0; i < _len; i++) {
+  for (Int i = 0; i < _len; i++) {
     _data[i] = mapfunc(_data[i]);
   }
   return this;
@@ -242,7 +250,7 @@ template <typename U, typename F>
 Arr<U> *Arr<T>::map(F mapfunc) {
   Arr<U> *result = new Arr<U>(_cap);
   result->_len = _len;
-  for (Word i = 0; i < _len; i++) {
+  for (Int i = 0; i < _len; i++) {
     result->_data[i] = mapfunc(_data[i]);
   }
   return result;
@@ -251,8 +259,8 @@ Arr<U> *Arr<T>::map(F mapfunc) {
 template <typename T>
 template <typename F>
 Arr<T> *Arr<T>::filter_in_place(F filterfunc) {
-  Word p = 0;
-  for (Word i = 0; i < _len; i++) {
+  Int p = 0;
+  for (Int i = 0; i < _len; i++) {
     if (filterfunc(_data[i]))
       _data[p++] = _data[i];
   }
@@ -270,7 +278,7 @@ Arr<T> *Arr<T>::filter(F filterfunc) {
 template <typename T>
 template <typename F>
 void Arr<T>::iter(F iterfunc) {
-  for (Word i = 0; i < _len; i++) {
+  for (Int i = 0; i < _len; i++) {
     iterfunc(_data[i]);
   }
 }
@@ -278,7 +286,7 @@ void Arr<T>::iter(F iterfunc) {
 template <typename T>
 template <typename F>
 void Arr<T>::iteri(F iterfunc) {
-  for (Word i = 0; i < _len; i++) {
+  for (Int i = 0; i < _len; i++) {
     iterfunc(i, _data[i]);
   }
 }
@@ -289,10 +297,10 @@ Arr<T> *Arr<T>::sort_in_place(F cmpfunc) {
   T *in = (T *) GC_MALLOC(sizeof(T) * _len);
   T *out = (T *) GC_MALLOC(sizeof(T) * _len);
   memcpy(in, _data, sizeof(T) * _len);
-  Word step = 1;
+  Int step = 1;
   while (step < _len) {
-    for (Word i = 0; i < _len; i += step * 2) {
-      Word p = i, l = i, r = i + step, lmax = l + step, rmax = r + step;
+    for (Int i = 0; i < _len; i += step * 2) {
+      Int p = i, l = i, r = i + step, lmax = l + step, rmax = r + step;
       if (rmax > _len)
         rmax = _len;
       if (lmax > _len)
@@ -332,7 +340,7 @@ template <typename T>
 template <typename A, typename F>
 A Arr<T>::fold(A init, F foldfunc) {
   A result = init;
-  for (Word i = 0; i < _len; i++) {
+  for (Int i = 0; i < _len; i++) {
     result = foldfunc(result, _data[i]);
   }
   return result;
@@ -342,17 +350,17 @@ template <typename T>
 bool Arr<T>::eq(Arr<T> *that) {
   if (_len != that->_len)
     return false;
-  for (Word i = 0; i < _len; i++)
+  for (Int i = 0; i < _len; i++)
     if (!_data[i]->eq(that->_data[i]))
       return false;
   return true;
 }
 
 template <typename T>
-Arr<T> *Arr<T>::remove(Word start, Word count) {
+Arr<T> *Arr<T>::remove(Int start, Int count) {
   require(start >= 0 && count >= 0 && start + count <= _len,
     "index out of range");
-  Word end = start + count;
+  Int end = start + count;
   memmove(_data + start, _data + end, sizeof(T) * (_len - end));
   memset(_data + _len - count, 0, sizeof(T) * count);
   _len -= count;
@@ -360,19 +368,21 @@ Arr<T> *Arr<T>::remove(Word start, Word count) {
 }
 
 template <typename T>
-Arr<T> *Arr<T>::fill(Word start, Word count, T value) {
+Arr<T> *Arr<T>::fill(Int start, Int count, T value) {
   require(start >= 0 && count >= 0 && start + count <= _len,
     "index out of range");
-  Word end = start + count;
-  for (Word i = start; i < end; i++) {
+  Int end = start + count;
+  for (Int i = start; i < end; i++) {
     _data[i] = value;
   }
   return this;
 }
 
 template <typename T>
-Arr<T> *Arr<T>::subarr(Word start, Word count) {
-  require(start >= 0 && count >=0 && start + count <= _len, "index out of range");
+Arr<T> *Arr<T>::subarr(Int start, Int count) {
+  require(start >= 0 && start + count <= _len, "index out of range");
+  if (count <= 0)
+    return new Arr<T>();
   return new Arr<T>(count, _data + start);
 }
 

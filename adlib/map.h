@@ -14,6 +14,8 @@ struct Assoc : public GC {
 
 template <typename K, typename V>
 class Map : public GC {
+  template <typename K2, typename V2>
+  friend class Map;
 private:
   static const Int _minsize = 8;
   Int _count;
@@ -97,7 +99,7 @@ public:
   Map<K, V> *add(Arr<K> *keys, Arr<V> *values, bool replace = false);
   bool remove(K key);
   bool contains(K key);
-  V *find(K key);
+  bool find(K key, V &value);
   V get(K key, V if_absent);
   V get(K key);
   V at(K key);
@@ -263,46 +265,48 @@ bool Map<K, V>::remove(K key) {
 }
 
 template <typename K, typename V>
-V *Map<K, V>::find(K key) {
+bool Map<K, V>::find(K key, V &value) {
   Word mask = _size - 1;
   Word hash = _hash(key) & mask;
   while (_state[hash] != SLOT_EMPTY) {
-    if (_state[hash] == SLOT_OCCUPIED && _cmp(_keys[hash], key) == 0)
-      return _values + hash;
+    if (_state[hash] == SLOT_OCCUPIED && _cmp(_keys[hash], key) == 0) {
+      value = _values[hash];
+      return true;
+    }
     hash = next(hash) & mask;
   }
-  return NULL;
+  return false;
 }
 
 template <typename K, typename V>
 V Map<K, V>::get(K key, V if_absent) {
-  V *result = find(key);
-  if (!result)
+  V result;
+  if (find(key, result))
+    return result;
+  else
     return if_absent;
-  return *result;
 }
 
 template <typename K, typename V>
 V Map<K, V>::get(K key) {
-  V *result = find(key);
-  if (!result) {
-    V val;
-    memset(val, 0, sizeof(val));
-    return val;
-  }
-  return *result;
+  V result;
+  if (find(key, result))
+    return result;
+  memset(result, 0, sizeof(V));
+  return result;
 }
 
 template <typename K, typename V>
 V Map<K, V>::at(K key) {
-  V *result = find(key);
-  require(result != NULL, "key not found");
-  return *result;
+  V result;
+  require(find(key, result), "key not found");
+  return result;
 }
 
 template <typename K, typename V>
 bool Map<K, V>::contains(K key) {
-  return find(key) != NULL;
+  V value;
+  return find(key, value);
 }
 
 template <typename K, typename V>
