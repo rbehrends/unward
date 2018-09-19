@@ -1,9 +1,0 @@
-#!/bin/bash
-P="${BASH_SOURCE[0]}"
-DART="$P.dart"
-SNAP="$P.snap"
-DARTFLAGS=
-if [ ! -f "$SNAP" -o "$DART" -nt "$SNAP" ]; then
-  dart $DARTFLAGS --snapshot="$SNAP" "$DART"
-fi
-dart $DARTFLAGS "$SNAP" "$@"
