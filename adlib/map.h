@@ -15,16 +15,16 @@ struct Assoc : public GC {
 template <typename K, typename V>
 class Map : public GC {
 private:
-  static const Word _minsize = 8;
-  Word _count;
-  Word _size;
-  Word _deleted;
+  static const Int _minsize = 8;
+  Int _count;
+  Int _size;
+  Int _deleted;
   CmpFunc(K, _cmp);
   HashFunc(K, _hash);
   K *_keys;
   V *_values;
   Byte *_state;
-  void resize(Word newsize) {
+  void resize(Int newsize) {
     _keys = (K *) GC_MALLOC(newsize * sizeof(K));
     _values = (V *) GC_MALLOC(newsize * sizeof(V));
     _state = (Byte *) GC_MALLOC_ATOMIC(newsize);
@@ -41,7 +41,7 @@ public:
   class Each {
   private:
     Map *_map;
-    Word _i;
+    Int _i;
     void skip() {
       while (_i < _map->_size && _map->_state[_i] != SLOT_OCCUPIED)
         _i++;
@@ -85,7 +85,7 @@ public:
   Map<K, V> *clone() {
     return new Map(this);
   }
-  Word count() {
+  Int count() {
     return _count;
   }
   Map<K, V> *add(K key, V value, bool replace = false);
@@ -125,8 +125,8 @@ public:
 
 template <typename K, typename V>
 void Map<K, V>::rebuild() {
-  Word size = _size;
-  Word newsize = nextPow2(_count * 2);
+  Int size = _size;
+  Int newsize = nextPow2(_count * 2);
   if (newsize < _minsize)
     newsize = _minsize;
   K *keys = _keys;
@@ -135,7 +135,7 @@ void Map<K, V>::rebuild() {
   _count = 0;
   _deleted = 0;
   resize(newsize);
-  for (Word i = 0; i < size; i++) {
+  for (Int i = 0; i < size; i++) {
     if (state[i] == SLOT_OCCUPIED)
       uncheckedAdd(keys[i], values[i]);
   }
@@ -228,7 +228,7 @@ Map<K, V> *Map<K, V>::add(K key, V value, bool replace) {
 
 template <typename K, typename V>
 Map<K, V> *Map<K, V>::add(Arr<Assoc<K, V> > *arr, bool replace) {
-  for (Word i = 0; i < arr->len(); i++)
+  for (Int i = 0; i < arr->len(); i++)
     add(arr->at(i));
   return this;
 }
@@ -236,7 +236,7 @@ Map<K, V> *Map<K, V>::add(Arr<Assoc<K, V> > *arr, bool replace) {
 template <typename K, typename V>
 Map<K, V> *Map<K, V>::add(Arr<K> *keys, Arr<V> *values, bool replace) {
   require(keys->len() == values->len(), "mismatched array sizes");
-  for (Word i = 0; i < keys->len(); i++) {
+  for (Int i = 0; i < keys->len(); i++) {
     add(keys->at(i), values->at(i));
   }
   return this;
@@ -308,7 +308,7 @@ bool Map<K, V>::contains(K key) {
 template <typename K, typename V>
 Arr<K> *Map<K, V>::keys() {
   Arr<K> *result = new Arr<K>(_count);
-  for (Word i = 0; i < _size; i++) {
+  for (Int i = 0; i < _size; i++) {
     if (_state[i] == SLOT_OCCUPIED)
       result->add(_keys[i]);
   }
@@ -318,7 +318,7 @@ Arr<K> *Map<K, V>::keys() {
 template <typename K, typename V>
 Arr<V> *Map<K, V>::values() {
   Arr<V> *result = new Arr<V>(_count);
-  for (Word i = 0; i < _size; i++) {
+  for (Int i = 0; i < _size; i++) {
     if (_state[i] == SLOT_OCCUPIED)
       result->add(_values[i]);
   }
@@ -328,7 +328,7 @@ Arr<V> *Map<K, V>::values() {
 template <typename K, typename V>
 Arr<Assoc<K, V> > *Map<K, V>::pairs() {
   Arr<Assoc<K, V> > *result = new Arr<Assoc<K, V> >(_count);
-  for (Word i = 0; i < _size; i++) {
+  for (Int i = 0; i < _size; i++) {
     if (_state[i] == SLOT_OCCUPIED) {
       Assoc<K, V> m;
       m.key = _keys[i];

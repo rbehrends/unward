@@ -37,5 +37,6 @@ struct SourceFile : public GC {
 
 typedef Arr<SourceFile *> SourceList;
 
+Str *Intern(const char *str, Int len);
 bool ReadSource(SourceFile *source);
 bool Tokenize(SourceFile *source);

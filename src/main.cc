@@ -29,13 +29,15 @@ struct AbsPath : public GC {
 };
 
 StrArr *FindFiles(StrArr *paths) {
+#ifdef HAVE_DIRENT_H
   StrArr *result = new StrArr();
-  for (Word i = 0; i < paths->len(); i++) {
+  for (Int i = 0; i < paths->len(); i++) {
     StrArr *files = ReadDirRecursive(paths->at(i));
     result->add(files);
   }
   return result;
-#if 0
+#else
+  // punt to the Unix find utility
   Str *prog = S("find");
   AbsPath abspath;
   StrArr *args = paths->map<Str *>(abspath);
@@ -43,7 +45,7 @@ StrArr *FindFiles(StrArr *paths) {
   StrArr *lines = ReadProcessLines(prog, args);
   if (!lines)
     return A();
-  for (Word i = 0; i < lines->len(); i++)
+  for (Int i = 0; i < lines->len(); i++)
     lines->item(i)->chomp();
   if (lines->len() > 0 && lines->last()->len() == 0)
     lines->pop();
@@ -58,13 +60,13 @@ typedef Map<Str *, SourceFile *> FileMap;
 // debugging functionality
 
 void PrintTokenList(TokenList *tokens) {
-  for (Word i = 0; i < tokens->len(); i++) {
+  for (Int i = 0; i < tokens->len(); i++) {
     Token token = tokens->item(i);
     printf("%s: %s\n", SymbolNames[token.sym], token.str->c_str());
   }
 }
 void PrintFuncList(FuncList *funcs) {
-  for (Word i = 0; i < funcs->len(); i++) {
+  for (Int i = 0; i < funcs->len(); i++) {
     FuncSpec *func = funcs->at(i);
     PrintLn(func->name);
   }
@@ -79,7 +81,7 @@ void Main() {
   GCVar(InputFiles, new FileMap());
   GCVar(InputSources, new SourceList());
   StrArr *files = FindFiles(Args);
-  for (Word i = 0; i < files->len(); i++) {
+  for (Int i = 0; i < files->len(); i++) {
     Str *file = files->at(i);
     if (!file->ends_with(".h") && !file->ends_with(".c"))
       continue;
@@ -101,7 +103,7 @@ void Main() {
   BitMatrix *callgraph = BuildCallGraph(funcs);
   funcs = FindAllCallers(callgraph, funcs, A("PTR_BAG", "CONST_PTR_BAG"));
   SectionList *unprotected = FindUnsafeSections(InputSources);
-  for (Word i = 0; i < unprotected->len(); i++)
+  for (Int i = 0; i < unprotected->len(); i++)
     PrintLn(unprotected->at(i)->source->filename);
   StrSet *funcnames = FindCalls(BuildFuncMap(funcs), unprotected);
   // PrintFuncList(funcs);

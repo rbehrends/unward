@@ -12,7 +12,7 @@
 
 typedef Map<FixStr, Str *> InternMap;
 
-Str *Intern(const char *ptr, Word len) {
+Str *Intern(const char *ptr, Int len) {
   static InternMap *map = NULL;
   if (!map) {
     GCVar(map, new InternMap());

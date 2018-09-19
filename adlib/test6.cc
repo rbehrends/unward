@@ -3,11 +3,11 @@
 
 #define CHECK_MAT(mat, prop, msg) \
   { \
-    Word rows = mat->len(); \
-    Word cols = mat->at(0)->len(); \
+    Int rows = mat->len(); \
+    Int cols = mat->at(0)->len(); \
     bool ok = true; \
-    for (Word row = 0; row < rows; row++) { \
-      for (Word col = 0; col < cols; col++) { \
+    for (Int row = 0; row < rows; row++) { \
+      for (Int col = 0; col < cols; col++) { \
         ok &= mat->at(row)->test(col) == (prop); \
       } \
     } \
@@ -17,11 +17,11 @@
 void Main() {
   BitSet *set = new BitSet(256);
   BitSet *set2 = new BitSet(256);
-  for (Word i = 0; i < 200; i += 2) {
+  for (Int i = 0; i < 200; i += 2) {
     set->set(i);
     set2->set(i + 1);
   }
-  for (Word i = 0; i < 200; i += 4) {
+  for (Int i = 0; i < 200; i += 4) {
     set2->set(i);
     set2->clear(i + 1);
   }
@@ -29,14 +29,14 @@ void Main() {
   Check(set->union_with(set2)->count() == 150, "bitset union");
   Check(set->intersect_with(set2)->count() == 50, "bitset intersection");
   Check(set->diff_with(set2)->count() == 50, "bitset difference");
-  Word sum = 0;
+  Int sum = 0;
   for (BitSet::Each it(set); it; it++) {
     sum += *it;
   }
   Check(sum == 99 * 100, "bitset iteration");
-  const Word n = 1000;
+  const Int n = 1000;
   BitMatrix *mat = MakeBitMatrix(n, n);
-  for (Word i = 0; i < n; i++) {
+  for (Int i = 0; i < n; i++) {
     mat->at(i)->set(i);
   }
   BitMatrix *mat2 = Transpose(mat);
@@ -44,7 +44,7 @@ void Main() {
   mat2 = TransitiveClosure(mat);
   CHECK_MAT(mat2, row == col, "transitive closure 1");
   mat = MakeBitMatrix(n, n);
-  for (Word i = 1; i < n; i++) {
+  for (Int i = 1; i < n; i++) {
     mat->at(i - 1)->set(i);
   }
   mat->at(n - 1)->set(0);

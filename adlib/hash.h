@@ -1,6 +1,6 @@
 #pragma once
 
-Word Hash(const char *addr, Word n);
+Word Hash(const char *addr, Int n);
 Word Hash(Str *str);
 Word Hash(const char *str);
 Word Hash(Word w);

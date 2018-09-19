@@ -70,7 +70,7 @@ void Main() {
   }
   intarr = intarr->sort(IntCmp);
   int mismatch = 0;
-  for (Word i = 1; i < intarr->len(); i++) {
+  for (Int i = 1; i < intarr->len(); i++) {
     if (intarr->at(i - 1) >= intarr->at(i))
       mismatch++;
   }

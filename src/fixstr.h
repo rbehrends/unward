@@ -2,7 +2,7 @@
 
 struct FixStr : public GC {
   const char *str;
-  Word len;
+  Int len;
 };
 
 Word Hash(FixStr fs);

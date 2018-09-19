@@ -10,10 +10,10 @@ Str *Str::chomp() {
   return this;
 }
 
-StrArr *Str::split(const char *s, Word n) {
-  Arr<Word> *parts = new Arr<Word>();
+StrArr *Str::split(const char *s, Int n) {
+  Arr<Int> *parts = new Arr<Int>();
   parts->add(-n);
-  for (Word i = 0; i < _len - n; i++) {
+  for (Int i = 0; i < _len - n; i++) {
     if (_data[i] == s[0] && memcmp(_data + i, s, n)) {
       parts->add(i);
       i += n;
@@ -21,9 +21,9 @@ StrArr *Str::split(const char *s, Word n) {
   }
   parts->add(_len);
   StrArr *result = new StrArr(parts->len() - 1);
-  for (Word i = 1; i < parts->len(); i++) {
-    Word begin = parts->at(i - 1) + n;
-    Word end = parts->at(i);
+  for (Int i = 1; i < parts->len(); i++) {
+    Int begin = parts->at(i - 1) + n;
+    Int end = parts->at(i);
     result->add(new Str(_data + begin, end - begin));
   }
   return result;
@@ -34,14 +34,14 @@ StrArr *Str::split(Str *sep) {
 }
 
 StrArr *Str::split(char ch) {
-  Word parts = 1;
-  for (Word i = 0; i < _len; i++) {
+  Int parts = 1;
+  for (Int i = 0; i < _len; i++) {
     if (_data[i] == ch)
       parts++;
   }
   StrArr *result = new StrArr(parts);
-  Word last = 0;
-  for (Word i = 0; i < _len; i++) {
+  Int last = 0;
+  for (Int i = 0; i < _len; i++) {
     if (_data[i] == ch) {
       result->add(new Str(_data + last, i - last));
       last = i + 1;
@@ -57,18 +57,18 @@ StrArr *Str::split(const char *s) {
 
 StrArr *Str::splitLines() {
   StrArr *result = split('\n');
-  for (Word i = 0; i < result->len(); i++) {
+  for (Int i = 0; i < result->len(); i++) {
     result->at(i)->chomp();
   }
   return result;
 }
 
-Str *StrJoin(StrArr *arr, const char *sep, Word n) {
+Str *StrJoin(StrArr *arr, const char *sep, Int n) {
   if (arr->len() == 0)
     return new Str();
   Str *result = new Str(arr->len() * (n + 1));
   result->add(arr->first());
-  for (Word i = 1; i < arr->len(); i++) {
+  for (Int i = 1; i < arr->len(); i++) {
     result->add(sep, n);
     result->add(arr->at(i));
   }
@@ -87,7 +87,7 @@ Str *StrJoin(StrArr *arr, Str *sep) {
   return StrJoin(arr, sep->c_str(), sep->len());
 }
 
-bool Str::starts_with(const char *s, Word n) {
+bool Str::starts_with(const char *s, Int n) {
   if (n > _len)
     return false;
   return memcmp(_data, s, n) == 0;
@@ -101,7 +101,7 @@ bool Str::starts_with(Str *str) {
   return starts_with(str->c_str(), str->len());
 }
 
-bool Str::ends_with(const char *s, Word n) {
+bool Str::ends_with(const char *s, Int n) {
   if (n > _len)
     return false;
   return memcmp(_data + _len - n, s, n) == 0;
@@ -116,8 +116,8 @@ bool Str::ends_with(Str *str) {
 }
 
 int Cmp(Str *str1, Str *str2) {
-  Word len1 = str1->len();
-  Word len2 = str2->len();
+  Int len1 = str1->len();
+  Int len2 = str2->len();
   int result = memcmp(str1->c_str(), str2->c_str(), Min(len1, len2));
   if (result == 0) {
     if (len1 < len2)
@@ -132,7 +132,7 @@ int StrCmp(Str *str1, Str *str2) {
   return Cmp(str1, str2);
 }
 
-bool Str::eq(const char *s, Word n) {
+bool Str::eq(const char *s, Int n) {
   if (n != _len)
     return false;
   return memcmp(_data, s, n) == 0;
@@ -146,28 +146,29 @@ bool Str::eq(Str *str) {
   return eq(str->c_str(), str->len());
 }
 
-Str *Str::substr(Word start, Word count) {
-  require(start + count <= _len, "index out of range");
+Str *Str::substr(Int start, Int count) {
+  require(0 <= start && start < _len && count >= 0 && start + count <= _len,
+    "index out of range");
   return new Str(_data + start, count);
 }
 
-Word Str::find(char ch, Word from) {
+Int Str::find(char ch, Int from) {
   require(from <= _len, "index out of range");
-  for (Word i = from; i < _len; i++) {
+  for (Int i = from; i < _len; i++) {
     if (_data[i] == ch)
       return i;
   }
   return NOWHERE;
 }
 
-Word Str::find(const char *s, Word n, Word from) {
+Int Str::find(const char *s, Int n, Int from) {
   require(n > 0, "empty string");
   require(from < _len, "index out of range");
   if (n > _len)
     return NOWHERE;
-  Word end = _len - n + 1;
+  Int end = _len - n + 1;
   char ch = s[0];
-  for (Word i = from; i < end; i++) {
+  for (Int i = from; i < end; i++) {
     if (_data[i] == ch) {
       if (memcmp(_data + i, s, n) == 0)
         return i;
@@ -176,15 +177,15 @@ Word Str::find(const char *s, Word n, Word from) {
   return NOWHERE;
 }
 
-Word Str::find(const char *s, Word from) {
+Int Str::find(const char *s, Int from) {
   return find(s, strlen(s), from);
 }
 
-Word Str::find(Str *str, Word from) {
+Int Str::find(Str *str, Int from) {
   return find(str->_data, str->_len, from);
 }
 
-Word Str::rfind(char ch) {
+Int Str::rfind(char ch) {
   for (Int i = _len - 1; i >= 0; i--) {
     if (_data[i] == ch)
       return i;
@@ -192,11 +193,11 @@ Word Str::rfind(char ch) {
   return NOWHERE;
 }
 
-Word Str::rfind(const char *s, Word n) {
+Int Str::rfind(const char *s, Int n) {
   require(n > 0, "empty string");
   if (n > _len)
     return NOWHERE;
-  Word end = _len - n;
+  Int end = _len - n;
   char ch = s[0];
   for (Int i = end - 1; i >= 0; i--) {
     if (_data[i] == ch) {
@@ -207,11 +208,11 @@ Word Str::rfind(const char *s, Word n) {
   return NOWHERE;
 }
 
-Word Str::rfind(const char *s) {
+Int Str::rfind(const char *s) {
   return rfind(s, strlen(s));
 }
 
-Word Str::rfind(Str *str) {
+Int Str::rfind(Str *str) {
   return rfind(str->_data, str->_len);
 }
 

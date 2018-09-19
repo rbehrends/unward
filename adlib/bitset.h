@@ -8,13 +8,13 @@ typedef Arr<BitSet *> BitMatrix;
 
 class BitSet : public GC {
 private:
-  Word _bits;
-  Word _words;
+  Int _bits;
+  Int _words;
   Word32 *_data;
-  void init(Word n);
-  void resize(Word n);
-  void expand(Word n);
-  Word index(Word n) {
+  void init(Int n);
+  void resize(Int n);
+  void expand(Int n);
+  Int index(Word n) {
     return n >> 5;
   }
   Word bit(Word n) {
@@ -25,7 +25,7 @@ public:
   class Each {
   private:
     BitSet *_set;
-    Word _i;
+    Int _i;
     Word _off;
     Word32 _mask;
     void next() {
@@ -61,16 +61,16 @@ public:
       next();
       skip();
     }
-    Word operator*() {
+    Int operator*() {
       return _i;
     }
   };
 
-  BitSet(Word n) {
+  BitSet(Int n) {
     init(n);
     zero();
   }
-  Word len() {
+  Int len() {
     return _bits;
   }
   void zero();
@@ -81,19 +81,19 @@ public:
   BitSet *clone() {
     return new BitSet(this);
   }
-  void set(Word i) {
+  void set(Int i) {
     require(i < _bits, "index out of range");
     _data[index(i)] |= bit(i);
   }
-  void clear(Word i) {
+  void clear(Int i) {
     require(i < _bits, "index out of range");
     _data[index(i)] &= ~bit(i);
   }
-  bool test(Word i) {
+  bool test(Int i) {
     require(i < _bits, "index out of range");
     return (_data[index(i)] & bit(i)) != 0;
   }
-  Word count();
+  Int count();
   BitSet *complement();
   BitSet *complement_in_place();
   BitSet *union_with(BitSet *that);
@@ -106,7 +106,7 @@ public:
   friend BitMatrix *TransitiveClosure(BitMatrix *mat);
 };
 
-BitMatrix *MakeBitMatrix(Word n, Word m);
+BitMatrix *MakeBitMatrix(Int n, Int m);
 bool IsMatrix(BitMatrix *mat);
 BitMatrix *Clone(BitMatrix *mat);
 BitMatrix *Transpose(BitMatrix *mat);

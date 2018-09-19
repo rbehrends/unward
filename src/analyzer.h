@@ -10,15 +10,15 @@ typedef Arr<FuncSpec *> FuncList;
 typedef Map<Str *, FuncSpec *> FuncMap;
 
 struct FuncSpec : public GC {
-  Word index;
+  Int index;
   SourceFile *source;
   Str *name;
   FuncList *calls;
-  Word start, end;
-  Word namepos;
+  Int start, end;
+  Int namepos;
 };
 
-typedef Arr<Word> PosList;
+typedef Arr<Int> PosList;
 
 struct SectionSpec : public GC {
   SourceFile *source;
@@ -34,7 +34,7 @@ void FindCalls(FuncList *funcs);
 BitMatrix *BuildCallGraph(FuncList *funcs);
 FuncList *FindAllCallers(BitMatrix *callgraph, FuncList *funcs, StrArr *base);
 FuncMap *BuildFuncMap(FuncList *funcs);
-PosList *FindCalls(FuncMap *funcmap, SourceFile *source, Word start, Word end);
+PosList *FindCalls(FuncMap *funcmap, SourceFile *source, Int start, Int end);
 SectionSpec *FindUnsafeSections(SourceFile *source);
 SectionList *FindUnsafeSections(SourceList *sources);
 StrSet *FindCalls(FuncMap *funcmap, SectionList *sections);

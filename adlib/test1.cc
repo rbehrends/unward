@@ -5,11 +5,11 @@
 
 struct Node : public GC {
   Node *left, *right;
-  Word val;
+  Int val;
   Word dummy[16 - 3];
 };
 
-Node *make_tree(int depth, Word &counter) {
+Node *make_tree(int depth, Int &counter) {
   Node *node = new Node();
   if (depth != 0) {
     node->left = make_tree(depth - 1, counter);
@@ -21,8 +21,8 @@ Node *make_tree(int depth, Word &counter) {
   return node;
 }
 
-Word sum_tree(Node *node) {
-  Word result = 0;
+Int sum_tree(Node *node) {
+  Int result = 0;
   if (node) {
     result += node->val;
     result += sum_tree(node->left);
@@ -37,7 +37,7 @@ static const int max_depth = 15; // 2^16-1 nodes.
 void Main() {
   Str *cmd = new Str(CMD);
   StrArr *args = (new Str(ARGS))->split(' ');
-  Word n = 0;
+  Int n = 0;
   Str *output;
   for (int j = 0; j < iter; j++) {
     output = ReadProcess(cmd, args);
@@ -46,7 +46,7 @@ void Main() {
   Check(n == iter * 48894, "read process output as bytes");
   Node *tree;
   static Node *permtree;
-  Word counter;
+  Int counter;
   counter = 0;
   GCVar(permtree, make_tree(max_depth, counter));
   for (int i = 0; i < iter; i++) {

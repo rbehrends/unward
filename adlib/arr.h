@@ -154,11 +154,11 @@ public:
   }
   bool eq(Arr<T> *that);
   T &item(Word i) {
-    require(i < _len, "index out of range");
+    require(0 <= i && i < _len, "index out of range");
     return _data[i];
   }
   T &at(Word i) {
-    require(i < _len, "index out of range");
+    require(0 <= i && i < _len, "index out of range");
     return _data[i];
   }
   T *c_mem() {
@@ -350,7 +350,8 @@ bool Arr<T>::eq(Arr<T> *that) {
 
 template <typename T>
 Arr<T> *Arr<T>::remove(Word start, Word count) {
-  require(start + count <= _len, "index out of range");
+  require(start >= 0 && count >= 0 && start + count <= _len,
+    "index out of range");
   Word end = start + count;
   memmove(_data + start, _data + end, sizeof(T) * (_len - end));
   memset(_data + _len - count, 0, sizeof(T) * count);
@@ -360,7 +361,8 @@ Arr<T> *Arr<T>::remove(Word start, Word count) {
 
 template <typename T>
 Arr<T> *Arr<T>::fill(Word start, Word count, T value) {
-  require(start + count <= _len, "index out of range");
+  require(start >= 0 && count >= 0 && start + count <= _len,
+    "index out of range");
   Word end = start + count;
   for (Word i = start; i < end; i++) {
     _data[i] = value;
@@ -370,7 +372,7 @@ Arr<T> *Arr<T>::fill(Word start, Word count, T value) {
 
 template <typename T>
 Arr<T> *Arr<T>::subarr(Word start, Word count) {
-  require(start + count <= _len, "index out of range");
+  require(start >= 0 && count >=0 && start + count <= _len, "index out of range");
   return new Arr<T>(count, _data + start);
 }
 

@@ -5,7 +5,7 @@
 #define DJB2_INIT 5381
 #define DJB2_ITER(h, x) ((h * 33) + x)
 
-Word Hash(const char *addr, Word n) {
+Word Hash(const char *addr, Int n) {
   Word hash = DJB2_INIT;
   while (n-- > 0) {
     Byte byte = (Byte)(*addr++);

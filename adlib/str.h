@@ -6,23 +6,23 @@ typedef Arr<Str *> StrArr;
 
 class Str : public GC {
 private:
-  Word _len;
-  Word _cap;
+  Int _len;
+  Int _cap;
   char *_data;
-  void resize(Word newcap) {
+  void resize(Int newcap) {
     char *newdata = (char *) GC_MALLOC_ATOMIC(newcap + 1);
     memcpy(newdata, _data, _len);
     _data = newdata;
     _cap = newcap;
   }
-  void init(Word cap) {
+  void init(Int cap) {
     _len = 0;
     _cap = cap;
     // atomic memory is not zeroed by default.
     _data = (char *) GC_MALLOC_ATOMIC(cap + 1);
     _data[0] = '\0';
   }
-  void init(const char *s, Word len) {
+  void init(const char *s, Int len) {
     _len = _cap = len;
     // atomic memory is not zeroed by default.
     _data = (char *) GC_MALLOC_ATOMIC(_cap + 1);
@@ -34,7 +34,7 @@ public:
   class Each {
   private:
     Str *_str;
-    Word _i;
+    Int _i;
 
   public:
     Each(Str *str) {
@@ -60,14 +60,14 @@ public:
   Str(const char *s) {
     init(s, strlen(s));
   }
-  Str(const char *s, Word n) {
+  Str(const char *s, Int n) {
     init(s, n);
   }
-  Str(Word size) {
+  Str(Int size) {
     init(size);
   }
   Str() {
-    init(sizeof(Word) * 2 - 1);
+    init(sizeof(Int) * 2 - 1);
   }
   Str(const Str *str) {
     init(str->_data, str->_len);
@@ -75,7 +75,7 @@ public:
   Str *clone() {
     return new Str(this);
   }
-  Str *expand(Word newlen) {
+  Str *expand(Int newlen) {
     if (newlen > _cap)
       resize(nextPow2(newlen));
     return this;
@@ -91,7 +91,7 @@ public:
     _data[_len] = 0;
     return this;
   }
-  Str *add(const char *s, Word n) {
+  Str *add(const char *s, Int n) {
     expand(_len + n);
     memcpy(_data + _len, s, n);
     _len += n;
@@ -104,46 +104,46 @@ public:
   Str *add(const char *s) {
     return add(s, strlen(s));
   }
-  Str *substr(Word start, Word count);
+  Str *substr(Int start, Int count);
   Str *chomp();
-  Word find(Str *str, Word from = 0);
-  Word find(char ch, Word from = 0);
-  Word find(const char *s, Word from = 0);
-  Word find(const char *s, Word n, Word from);
-  Word rfind(Str *str);
-  Word rfind(char ch);
-  Word rfind(const char *s);
-  Word rfind(const char *s, Word n);
+  Int find(Str *str, Int from = 0);
+  Int find(char ch, Int from = 0);
+  Int find(const char *s, Int from = 0);
+  Int find(const char *s, Int n, Int from);
+  Int rfind(Str *str);
+  Int rfind(char ch);
+  Int rfind(const char *s);
+  Int rfind(const char *s, Int n);
   StrArr *split(Str *sep);
   StrArr *split(char ch);
   StrArr *split(const char *s);
-  StrArr *split(const char *s, Word n);
+  StrArr *split(const char *s, Int n);
   StrArr *splitLines();
   bool starts_with(Str *str);
   bool starts_with(const char *s);
-  bool starts_with(const char *s, Word n);
+  bool starts_with(const char *s, Int n);
   bool ends_with(Str *str);
   bool ends_with(const char *s);
-  bool ends_with(const char *s, Word n);
+  bool ends_with(const char *s, Int n);
   bool eq(Str *str);
   bool eq(const char *str);
-  bool eq(const char *str, Word n);
-  Word len() {
+  bool eq(const char *str, Int n);
+  Int len() {
     return _len;
   }
-  Word count() {
+  Int count() {
     return _len;
   }
-  char &ch(Word i) {
-    require(i <= _len, "string index out of range");
+  char &ch(Int i) {
+    require(0 <= i && i <= _len, "string index out of range");
     return _data[i];
   }
-  char &at(Word i) {
-    require(i <= _len, "string index out of range");
+  char &at(Int i) {
+    require(0 <= i && i <= _len, "string index out of range");
     return _data[i];
   }
-  char &operator[](Word i) {
-    require(i <= _len, "string index out of range");
+  char &operator[](Int i) {
+    require(0 <= i && i <= _len, "string index out of range");
     return _data[i];
   }
   char *c_str() {
@@ -157,14 +157,14 @@ public:
 Str *StrJoin(StrArr *arr, Str *sep);
 Str *StrJoin(StrArr *arr, char ch);
 Str *StrJoin(StrArr *arr, const char *sep);
-Str *StrJoin(StrArr *arr, const char *sep, Word n);
+Str *StrJoin(StrArr *arr, const char *sep, Int n);
 
 #define StrArrLit(a) (new StrArr(NUMOF(a), a, CStrToStr))
 
 int Cmp(Str *str1, Str *str2);
 int StrCmp(Str *str1, Str *str2);
 Str *ToStr(Int x);
-Str *ToStr(Word x);
+Str *ToStr(Int x);
 Str *CStrToStr(const char *s);
 
 static inline Str *S(const char *str) {

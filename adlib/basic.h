@@ -13,8 +13,8 @@ typedef const char *CStr;
 
 #define NOWHERE ((Word) -1)
 
-static inline Word nextPow2(Word n) {
-  Word result = 1;
+static inline Int nextPow2(Int n) {
+  Int result = 1;
   while (result < n)
     result *= 2;
   return result;

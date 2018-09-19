@@ -29,9 +29,9 @@ Str *ReadFile(Str *filename) {
 
 int WriteFile(FILE *fp, Str *data) {
   char *p = data->c_str();
-  Word len = data->len();
+  Int len = data->len();
   while (len != 0) {
-    Word written = fwrite(p, 1, len, fp);
+    Int written = fwrite(p, 1, len, fp);
     if (written == 0)
       return 0;
     len -= written;
@@ -103,7 +103,7 @@ Str *ShellEscape(Str *arg) {
 Str *BuildCommand(Str *prog, StrArr *args) {
   Str *command = new Str(1024);
   command->add(ShellEscape(prog));
-  for (Word i = 0; i < args->len(); i++) {
+  for (Int i = 0; i < args->len(); i++) {
     command->add(' ')->add(ShellEscape(args->at(i)));
   }
   return command;
@@ -281,7 +281,7 @@ static void WalkDir(StrArr *acc, const char *path, bool with_dirs) {
   if (!files)
     return;
   FileInfo info;
-  for (Word i = 0; i < files->len(); i++) {
+  for (Int i = 0; i < files->len(); i++) {
     Str *newpath = new Str(path);
     if (!newpath->ends_with(FILE_SEP))
       newpath->add(FILE_SEP);

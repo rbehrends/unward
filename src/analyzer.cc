@@ -5,11 +5,11 @@
 #include "lexer.h"
 #include "analyzer.h"
 
-static inline Token *GetToken(TokenList *tokens, Word pos) {
+static inline Token *GetToken(TokenList *tokens, Int pos) {
   return &tokens->item(pos);
 }
 
-static Token *Skip(TokenList *tokens, Word &pos, Word64 symset) {
+static Token *Skip(TokenList *tokens, Int &pos, Word64 symset) {
   Token *token = GetToken(tokens, pos);
   while (TEST(symset, token->sym)) {
     token++;
@@ -18,7 +18,7 @@ static Token *Skip(TokenList *tokens, Word &pos, Word64 symset) {
   return token;
 }
 
-static Token *SkipUntil(TokenList *tokens, Word &pos, Word64 symset) {
+static Token *SkipUntil(TokenList *tokens, Int &pos, Word64 symset) {
   symset |= BIT(SymEOF);
   Token *token = GetToken(tokens, pos);
   while (!TEST(symset, token->sym)) {
@@ -28,7 +28,7 @@ static Token *SkipUntil(TokenList *tokens, Word &pos, Word64 symset) {
   return token;
 }
 
-static Token *SkipToMatch(TokenList *tokens, Word &pos) {
+static Token *SkipToMatch(TokenList *tokens, Int &pos) {
   Token *token = GetToken(tokens, pos);
   Symbol left = token->sym;
   Symbol right = (Symbol)(left+1);
@@ -52,9 +52,9 @@ static Token *SkipToMatch(TokenList *tokens, Word &pos) {
 FuncList *FindInlineFunctions(SourceFile *source) {
   FuncList *result = new FuncList();
   TokenList *tokens = source->tokens;
-  Word pos = 0;
-  Word namepos = 0;
-  Word start = 0;
+  Int pos = 0;
+  Int namepos = 0;
+  Int start = 0;
   Str *name = NULL;
   for (;;) {
     Token *token = GetToken(tokens, pos);
@@ -89,7 +89,7 @@ FuncList *FindInlineFunctions(SourceFile *source) {
 
 FuncList *FindInlineFunctions(SourceList *sources) {
   FuncList *result = new FuncList();
-  for (Word i = 0; i < sources->len(); i++) {
+  for (Int i = 0; i < sources->len(); i++) {
     SourceFile *source = sources->item(i);
     if (source->filename->ends_with(".h")) {
       result->add(FindInlineFunctions(source));
@@ -99,10 +99,10 @@ FuncList *FindInlineFunctions(SourceList *sources) {
 }
 
 PosList *FindCalls(FuncMap *funcmap, SourceFile *source,
-    Word start, Word end) {
+    Int start, Int end) {
   PosList *calls = new PosList();
-  Word pos = start;
-  Word sympos = 0;
+  Int pos = start;
+  Int sympos = 0;
   TokenList *tokens = source->tokens;
   SkipUntil(tokens, pos, BIT(SymLBrace));
   while (pos <= end) {
@@ -124,11 +124,11 @@ PosList *FindCalls(FuncMap *funcmap, SourceFile *source,
 }
 
 void FindCalls(FuncMap *funcmap, FuncSpec *func) {
-  Arr<Word> *callpositions =
+  PosList *callpositions =
     FindCalls(funcmap, func->source, func->start, func->end);
   StrSet *callnames = new StrSet();
-  for (Word i = 0; i < callpositions->len(); i++) {
-    Word pos = callpositions->at(i);
+  for (Int i = 0; i < callpositions->len(); i++) {
+    Int pos = callpositions->at(i);
     callnames->add(func->source->tokens->at(pos).str);
   }
   func->calls = new FuncList();
@@ -139,7 +139,7 @@ void FindCalls(FuncMap *funcmap, FuncSpec *func) {
 
 FuncMap *BuildFuncMap(FuncList *funcs) {
   FuncMap *funcmap = new FuncMap();
-  for (Word i = 0; i < funcs->len(); i++) {
+  for (Int i = 0; i < funcs->len(); i++) {
     funcmap->add(funcs->at(i)->name, funcs->at(i));
   }
   return funcmap;
@@ -147,24 +147,24 @@ FuncMap *BuildFuncMap(FuncList *funcs) {
 
 void FindCalls(FuncList *funcs) {
   FuncMap *funcmap = BuildFuncMap(funcs);
-  for (Word i = 0; i < funcs->len(); i++) {
+  for (Int i = 0; i < funcs->len(); i++) {
     funcmap->add(funcs->at(i)->name, funcs->at(i));
   }
-  for (Word i = 0; i < funcs->len(); i++) {
+  for (Int i = 0; i < funcs->len(); i++) {
     FindCalls(funcmap, funcs->at(i));
   }
 }
 
 BitMatrix *BuildCallGraph(FuncList *funcs) {
   BitMatrix *result = MakeBitMatrix(funcs->len(), funcs->len());
-  for (Word i = 0; i < funcs->len(); i++) {
+  for (Int i = 0; i < funcs->len(); i++) {
     FuncSpec *func = funcs->at(i);
     func->index = i;
   }
-  for (Word i = 0; i < funcs->len(); i++) {
+  for (Int i = 0; i < funcs->len(); i++) {
     FuncSpec *func = funcs->at(i);
     FuncList *calls = func->calls;
-    for (Word j = 0; j < calls->len(); j++) {
+    for (Int j = 0; j < calls->len(); j++) {
       FuncSpec *target = calls->at(j);
       result->at(target->index)->set(func->index);
     }
@@ -176,13 +176,13 @@ FuncList *FindAllCallers(BitMatrix *callgraph, FuncList *funcs, StrArr* base) {
   FuncList *result = new FuncList();
   StrSet *basefuncs = new StrSet(base);
   BitSet *set = new BitSet(callgraph->at(0)->len());
-  for (Word i = 0; i < callgraph->len(); i++) {
+  for (Int i = 0; i < callgraph->len(); i++) {
     FuncSpec *func = funcs->at(i);
     if (basefuncs->contains(func->name)) {
       set->union_in_place(callgraph->at(i));
     }
   }
-  for (Word i = 0; i < callgraph->len(); i++) {
+  for (Int i = 0; i < callgraph->len(); i++) {
     if (set->test(i)) {
       result->add(funcs->at(i));
     }
@@ -198,7 +198,7 @@ SectionSpec *FindUnsafeSections(SourceFile *source) {
   sec->source = source;
   sec->start = new PosList();
   sec->end = new PosList();
-  for (Word i = 0; i < tokens->len(); i++) {
+  for (Int i = 0; i < tokens->len(); i++) {
     Token *token = &tokens->at(i);
     switch (token->sym) {
       case SymPPIf:
@@ -239,7 +239,7 @@ SectionSpec *FindUnsafeSections(SourceFile *source) {
 
 SectionList *FindUnsafeSections(SourceList *sources) {
   SectionList *result = new SectionList();
-  for (Word i = 0; i < sources->len(); i++) {
+  for (Int i = 0; i < sources->len(); i++) {
     SectionSpec *sec = FindUnsafeSections(sources->at(i));
     if (sec)
       result->add(sec);
@@ -249,16 +249,16 @@ SectionList *FindUnsafeSections(SourceList *sources) {
 
 StrSet *FindCalls(FuncMap *funcmap, SectionList *sections) {
   StrSet *result = new StrSet();
-  for (Word i = 0; i < sections->len(); i++) {
+  for (Int i = 0; i < sections->len(); i++) {
     SectionSpec *sec = sections->at(i);
     TokenList *tokens = sec->source->tokens;
     PosList *start = sec->start;
     PosList *end = sec->end;
     PosList *calls = new PosList();
-    for (Word j = 0; j < start->len(); j++) {
+    for (Int j = 0; j < start->len(); j++) {
       calls->add(FindCalls(funcmap, sec->source, start->at(j), end->at(j)));
     }
-    for (Word j = 0; j < calls->len(); j++) {
+    for (Int j = 0; j < calls->len(); j++) {
       result->add(tokens->at(calls->at(j)).str);
     }
   }

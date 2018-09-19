@@ -9,15 +9,15 @@
 template <typename T>
 class Set : public GC {
 private:
-  static const Word _minsize = 8;
-  Word _count;
-  Word _size;
-  Word _deleted;
+  static const Int _minsize = 8;
+  Int _count;
+  Int _size;
+  Int _deleted;
   CmpFunc(T, _cmp);
   HashFunc(T, _hash);
   T *_data;
   Byte *_state;
-  void resize(Word newsize) {
+  void resize(Int newsize) {
     _data = (T *) GC_MALLOC(newsize * sizeof(T));
     _state = (Byte *) GC_MALLOC_ATOMIC(newsize);
     memset(_state, SLOT_EMPTY, newsize);
@@ -33,7 +33,7 @@ public:
   class Each {
   private:
     Set *_set;
-    Word _i;
+    Int _i;
     void skip() {
       while (_i < _set->_size && _set->_state[_i] != SLOT_OCCUPIED)
         _i++;
@@ -71,7 +71,7 @@ public:
   Set<T> *clone() {
     return new Set(this);
   }
-  Word count() {
+  Int count() {
     return _count;
   }
   Set<T> *add(T item, bool replace = false);
@@ -106,8 +106,8 @@ public:
 
 template <typename T>
 void Set<T>::rebuild() {
-  Word size = _size;
-  Word newsize = nextPow2(_count * 2);
+  Int size = _size;
+  Int newsize = nextPow2(_count * 2);
   if (newsize < _minsize)
     newsize = _minsize;
   T *data = _data;
@@ -115,7 +115,7 @@ void Set<T>::rebuild() {
   _count = 0;
   _deleted = 0;
   resize(newsize);
-  for (Word i = 0; i < size; i++) {
+  for (Int i = 0; i < size; i++) {
     if (state[i] == SLOT_OCCUPIED)
       uncheckedAdd(data[i]);
   }
@@ -223,7 +223,7 @@ template <typename T>
 Set<T> *Set<T>::add(Arr<T> *arr, bool replace) {
   if ((_count + _deleted) * 3 / 2 >= _size)
     rebuild();
-  for (Word i = 0; i < arr->len(); i++)
+  for (Int i = 0; i < arr->len(); i++)
     add(arr->at(i), replace);
   return this;
 }
@@ -267,7 +267,7 @@ bool Set<T>::contains(T item) {
 template <typename T>
 Arr<T> *Set<T>::items() {
   Arr<T> *result = new Arr<T>(_count);
-  for (Word i = 0; i < _size; i++) {
+  for (Int i = 0; i < _size; i++) {
     if (_state[i] == SLOT_OCCUPIED)
       result->add(_data[i]);
   }
