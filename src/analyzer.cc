@@ -6,7 +6,7 @@
 #include "analyzer.h"
 
 static inline Token *GetToken(TokenList *tokens, Int pos) {
-  return &tokens->item(pos);
+  return &tokens->at(pos);
 }
 
 static Token *Skip(TokenList *tokens, Int &pos, Word64 symset) {
@@ -90,12 +90,17 @@ FuncList *FindInlineFunctions(SourceFile *source) {
 FuncList *FindInlineFunctions(SourceList *sources) {
   FuncList *result = new FuncList();
   for (Int i = 0; i < sources->len(); i++) {
-    SourceFile *source = sources->item(i);
+    SourceFile *source = sources->at(i);
     if (source->filename->ends_with(".h")) {
       result->add(FindInlineFunctions(source));
     }
   }
   return result;
+}
+
+void NumberFuncList(FuncList *funcs) {
+  for (Int i = 0; i < funcs->len(); i++)
+    funcs->at(i)->index = i;
 }
 
 PosList *FindCalls(FuncMap *funcmap, SourceFile *source,
@@ -155,7 +160,7 @@ void FindCalls(FuncList *funcs) {
   }
 }
 
-BitMatrix *BuildCallGraph(FuncList *funcs) {
+BitMatrix *BuildCallGraph(FuncList *funcs, CallDirection mode) {
   BitMatrix *result = MakeBitMatrix(funcs->len(), funcs->len());
   for (Int i = 0; i < funcs->len(); i++) {
     FuncSpec *func = funcs->at(i);
@@ -166,13 +171,20 @@ BitMatrix *BuildCallGraph(FuncList *funcs) {
     FuncList *calls = func->calls;
     for (Int j = 0; j < calls->len(); j++) {
       FuncSpec *target = calls->at(j);
-      result->at(target->index)->set(func->index);
+      switch (mode) {
+      case Callers:
+        result->at(func->index)->set(target->index);
+        break;
+      case Callees:
+        result->at(target->index)->set(func->index);
+        break;
+      }
     }
   }
   return TransitiveClosure(result);
 }
 
-FuncList *FindAllCallers(BitMatrix *callgraph, FuncList *funcs, StrArr* base) {
+FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, StrArr* base) {
   FuncList *result = new FuncList();
   StrSet *basefuncs = new StrSet(base);
   BitSet *set = new BitSet(callgraph->at(0)->len());
@@ -189,6 +201,15 @@ FuncList *FindAllCallers(BitMatrix *callgraph, FuncList *funcs, StrArr* base) {
   }
   return result;
 }
+
+FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, FuncList* base) {
+  StrArr *names = A();
+  for (Int i = 0; i < base->len(); i++) {
+    names->add(base->at(i)->name);
+  }
+  return FindAllCalls(callgraph, funcs, names);
+}
+
 
 SectionSpec *FindUnsafeSections(SourceFile *source) {
   SectionSpec *sec = new SectionSpec();
@@ -264,3 +285,4 @@ StrSet *FindCalls(FuncMap *funcmap, SectionList *sections) {
   }
   return result;
 }
+

@@ -100,12 +100,19 @@ void Main() {
   }
   FuncList *funcs = FindInlineFunctions(InputSources);
   FindCalls(funcs);
-  BitMatrix *callgraph = BuildCallGraph(funcs);
-  funcs = FindAllCallers(callgraph, funcs, A("PTR_BAG", "CONST_PTR_BAG"));
+  BitMatrix *calleegraph = BuildCallGraph(funcs, Callees);
+  funcs = FindAllCalls(calleegraph, funcs, A("PTR_BAG", "CONST_PTR_BAG"));
   SectionList *unprotected = FindUnsafeSections(InputSources);
-  for (Int i = 0; i < unprotected->len(); i++)
-    PrintLn(unprotected->at(i)->source->filename);
-  StrSet *funcnames = FindCalls(BuildFuncMap(funcs), unprotected);
+  // for (Int i = 0; i < unprotected->len(); i++)
+  //   PrintLn(unprotected->at(i)->source->filename);
+  StrSet *used_funcnames = FindCalls(BuildFuncMap(funcs), unprotected);
+  BitMatrix *callergraph = BuildCallGraph(funcs, Callers);
+  FuncList *indirect_used_funcs = FindAllCalls(callergraph, funcs,
+    used_funcnames->items());
   // PrintFuncList(funcs);
-  PrintLn(S(funcnames, "\n"));
+  for (Int i = 0; i < indirect_used_funcs->len(); i++) {
+    Str *name = indirect_used_funcs->at(i)->name;
+    used_funcnames->add(name);
+  }
+  PrintLn(S(used_funcnames, "\n"));
 }

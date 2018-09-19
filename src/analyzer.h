@@ -26,15 +26,19 @@ struct SectionSpec : public GC {
   PosList *end;
 };
 
+enum CallDirection { Callees, Callers };
+
 typedef Arr<SectionSpec *> SectionList;
 
+void NumberFuncList(FuncList *funcs);
 FuncList *FindInlineFunctions(SourceFile *source);
 FuncList *FindInlineFunctions(SourceList *sources);
 void FindCalls(FuncList *funcs);
-BitMatrix *BuildCallGraph(FuncList *funcs);
-FuncList *FindAllCallers(BitMatrix *callgraph, FuncList *funcs, StrArr *base);
+BitMatrix *BuildCallGraph(FuncList *funcs, CallDirection mode);
 FuncMap *BuildFuncMap(FuncList *funcs);
 PosList *FindCalls(FuncMap *funcmap, SourceFile *source, Int start, Int end);
 SectionSpec *FindUnsafeSections(SourceFile *source);
 SectionList *FindUnsafeSections(SourceList *sources);
 StrSet *FindCalls(FuncMap *funcmap, SectionList *sections);
+FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, StrArr *base);
+FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, FuncList *base);
