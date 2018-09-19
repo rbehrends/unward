@@ -4,6 +4,9 @@
 #include "analyzer.h"
 #include "rewrite.h"
 
+#define ROOT_FUNCS A("PTR_BAG", "CONST_PTR_BAG")
+#define BLACKLIST A("CHANGED_BAG")
+
 void Warning(Str *s) {
   printf("warning: %s\n", s->c_str());
 }
@@ -75,6 +78,14 @@ void PrintFuncList(FuncList *funcs) {
 FileMap *InputFiles;
 SourceList *InputSources;
 
+StrSet *FuncNames(FuncList *funcs) {
+  StrSet *result = new StrSet();
+  for (Int i = 0; i < funcs->len(); i++) {
+    result->add(funcs->at(i)->name);
+  }
+  return result;
+}
+
 void Main() {
   GCVar(InputFiles, new FileMap());
   GCVar(InputSources, new SourceList());
@@ -96,28 +107,38 @@ void Main() {
       InputSources->add(source);
     }
   }
+  // Step 1: Find all static inline functions
   FuncList *funcs = FindInlineFunctions(InputSources);
+  // Step 2: Find out which of those call other functions
   FindCalls(funcs);
+  // Step 3: Use the call graph to figure out which functions
+  // call any element of ROOT_FUNCS directly or indirectly.
   BitMatrix *calleegraph = BuildCallGraph(funcs, Callees);
   FuncList *wardfuncs =
-    FindAllCalls(calleegraph, funcs, A("PTR_BAG", "CONST_PTR_BAG"));
-  StrSet *wardfuncnames = new StrSet();
-  for (Int i = 0; i < wardfuncs->len(); i++)
-    wardfuncnames->add(wardfuncs->at(i)->name);
-  SectionList *unprotected = FindUnsafeSections(InputSources);
-  // for (Int i = 0; i < unprotected->len(); i++)
-  //   PrintLn(unprotected->at(i)->source->filename);
+    FindAllCalls(calleegraph, funcs, ROOT_FUNCS);
+  StrSet *wardfuncnames = FuncNames(wardfuncs);
+  // Step 4: Find all parts of the code that are surrounded by
+  // #ifndef WARD_ENABLED or #if !defined(WARD_ENABLED).
+  SectionList *unprotected = FindUnsafeSections(InputSources, wardfuncs);
+  // Step 5: Find all static inline functions called from those
+  // sections, including indirect calls.
   StrSet *used_funcnames = FindCalls(BuildFuncMap(funcs), unprotected);
   BitMatrix *callergraph = BuildCallGraph(funcs, Callers);
-  FuncList *indirect_used_funcs = FindAllCalls(callergraph, funcs,
+  FuncList *used_funcs = FindAllCalls(callergraph, funcs,
     used_funcnames->items());
-  // PrintFuncList(funcs);
-  for (Int i = 0; i < indirect_used_funcs->len(); i++) {
-    Str *name = indirect_used_funcs->at(i)->name;
-    used_funcnames->add(name);
-  }
+  used_funcnames = FuncNames(used_funcs);
+  // Step 6: We need to consider all functions that may both trigger
+  // a guard AND are called from an unprotected section.
   used_funcnames->intersect_in_place(wardfuncnames);
-  PrintLn(S(used_funcnames, "\n"));
-  SourceList *unsafe_sources = GenUnsafeCode(funcs, used_funcnames);
+  // Step 7: Remove false positives; this is right now only CHANGED_BAG(),
+  // which we know to be safe and which shouldn't have guards for
+  // performance reasons.
+  used_funcnames->diff_in_place(new StrSet(BLACKLIST));
+  // Step 8: Rewrite all files with unprotected sections.
+  SourceList *unsafe_sources = UpdateUnsafeSections(unprotected,
+    used_funcnames);
+  RewriteSourceFiles(unsafe_sources);
+  // Step 9: Rewrite header files with unsafe functions.
+  unsafe_sources = GenUnsafeCode(funcs, used_funcnames);
   RewriteSourceFiles(unsafe_sources);
 }

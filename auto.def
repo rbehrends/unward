@@ -23,6 +23,7 @@ options {
   with-boehm-gc:=yes => "Use the Boehm GC; the argument can be yes, no, or a path to the GC's installation directory."
   without-re2c => "Do not use re2c."
   adlibdev => "Change Makefile defaults for AdLib core development."
+  devel => "Enable debug mode by default (implied by --adlibdev)."
 }
 
 set includes "-I."
@@ -37,6 +38,10 @@ if {[opt-bool adlibdev]} {
 } else {
   define DEFAULT_TARGET "\$(PROG)"
   define DEBUG 0
+}
+
+if {[opt-bool devel]} {
+  define DEBUG 1
 }
 
 switch -glob -- $boehmarg {
@@ -245,7 +250,7 @@ proc make-lib-rule {src} {
       add-rule "\t\$(CC) \$(CFLAGS) \$(GCFLAGS) \$(INCLUDES) -c -o $obj $src"
     }
     * {
-      add-rule "\t\$(CXX) \$(CFLAGS) \$(INCLUDES) -c -o $obj $src"
+      add-rule "\t\$(CXX) \$(CXXFLAGS) \$(INCLUDES) -c -o $obj $src"
     }
   }
 }
@@ -254,7 +259,7 @@ proc make-prog-rule {src} {
   set obj [objpath $src]
   add-rule "$obj: $src \$(LIBHDR) \$(PROGHDR)"
   add-rule "\t\$(MKDIR) \$(BUILDDIR)"
-  add-rule "\t\$(CXX) \$(CFLAGS) \$(INCLUDES) -c -o $obj $src"
+  add-rule "\t\$(CXX) \$(CXXFLAGS) \$(INCLUDES) -c -o $obj $src"
 }
 
 proc test-rule {src} {

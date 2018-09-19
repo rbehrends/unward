@@ -39,6 +39,8 @@ struct SourceFile : public GC {
   Str *filename;
   Str *filedata;
   TokenList *tokens;
+  bool rewritten;
+  Arr<Int> *unsafe_calls;
   Arr<FuncSpec *> *rewritten_funcs;
   TokenList *rewritten_code;
 };

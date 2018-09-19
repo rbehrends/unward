@@ -26,6 +26,7 @@ struct SectionSpec : public GC {
   SourceFile *source;
   PosList *start;
   PosList *end;
+  PosList *callpositions;
 };
 
 enum CallDirection { Callees, Callers };
@@ -39,8 +40,7 @@ void FindCalls(FuncList *funcs);
 BitMatrix *BuildCallGraph(FuncList *funcs, CallDirection mode);
 FuncMap *BuildFuncMap(FuncList *funcs);
 PosList *FindCalls(FuncMap *funcmap, SourceFile *source, Int start, Int end);
-SectionSpec *FindUnsafeSections(SourceFile *source);
-SectionList *FindUnsafeSections(SourceList *sources);
+SectionList *FindUnsafeSections(SourceList *sources, FuncList *funcs);
 StrSet *FindCalls(FuncMap *funcmap, SectionList *sections);
 FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, StrArr *base);
 FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, FuncList *base);

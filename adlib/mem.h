@@ -16,18 +16,18 @@ public:
 
 template <typename T>
 void GCVar(T &var) {
+#ifndef USE_BOEHM_GC
   T *start = &var;
   T *end = start + 1;
-#ifndef USE_BOEHM_GC
   GC_add_roots(start, end);
 #endif
 }
 
 template <typename T>
 void GCVar(T &var, T val) {
+#ifndef USE_BOEHM_GC
   T *start = &var;
   T *end = start + 1;
-#ifndef USE_BOEHM_GC
   GC_add_roots(start, end);
 #endif
   var = val;

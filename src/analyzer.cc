@@ -194,7 +194,7 @@ FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, StrArr* base) {
     }
   }
   for (Int i = 0; i < callgraph->len(); i++) {
-    if (set->test(i)) {
+    if (set->test(i) || basefuncs->contains(funcs->at(i)->name)) {
       result->add(funcs->at(i));
     }
   }
@@ -261,12 +261,21 @@ SectionSpec *FindUnsafeSections(SourceFile *source) {
   return sec;
 }
 
-SectionList *FindUnsafeSections(SourceList *sources) {
+SectionList *FindUnsafeSections(SourceList *sources, FuncList *funcs) {
+  FuncMap *funcmap = BuildFuncMap(funcs);
   SectionList *result = new SectionList();
   for (Int i = 0; i < sources->len(); i++) {
-    SectionSpec *sec = FindUnsafeSections(sources->at(i));
-    if (sec)
+    SourceFile *source = sources->at(i);
+    SectionSpec *sec = FindUnsafeSections(source);
+    if (sec) {
       result->add(sec);
+      PosList *calls = new PosList();
+      for (Int i = 0; i < sec->start->len(); i++) {
+        calls->add(FindCalls(funcmap, source, sec->start->at(i),
+          sec->end->at(i)));
+      }
+      source->unsafe_calls = calls;
+    }
   }
   return result;
 }

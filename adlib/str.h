@@ -144,6 +144,10 @@ public:
     require(0 <= i && i <= _len, "string index out of range");
     return _data[i];
   }
+  unsigned char &byte(Int i) {
+    require(0 <= i && i <= _len, "string index out of range");
+    return ((unsigned char *)_data)[i];
+  }
   char &at(Int i) {
     require(0 <= i && i <= _len, "string index out of range");
     return _data[i];

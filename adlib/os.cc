@@ -73,15 +73,15 @@ void InitSafeChars() {
     safe_chars[i] = 1;
   const char *p = ",._+:@%/-";
   while (*p)
-    safe_chars[*p++] = 1;
+    safe_chars[(unsigned char) *p++] = 1;
 }
 
 INIT(_AdLibOS, InitSafeChars(););
 
 Str *ShellEscape(Str *arg) {
   int safe = 1;
-  for (Str::Each it(arg); it; ++it) {
-    if (!safe_chars[*it]) {
+  for (Int i = 0; i < arg->len(); i++) {
+    if (!safe_chars[arg->byte(i)]) {
       safe = 0;
       break;
     }
@@ -244,7 +244,7 @@ FileInfo *FileStat(const char *path, bool follow_links) {
 }
 
 FileInfo *FileStat(Str *path, bool follow_links) {
-  return FileStat(path, follow_links);
+  return FileStat(path->c_str(), follow_links);
 }
 
 StrArr *ReadDir(const char *path) {

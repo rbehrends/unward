@@ -20,16 +20,12 @@ Str *UnsafeName(Str *name) {
   }
   Str *result;
   if (!unsafe_names->find(name, result)) {
-    bool has_lower_case = false;
     const char *unsafe_prefix = "UNSAFE_";
     for (Int i = 0; i < name->len(); i++) {
       char ch = name->at(i);
       if (ch >= 'a' && ch <= 'z') {
-        has_lower_case = true;
-        break;
-      }
-      if (has_lower_case) {
         unsafe_prefix = "Unsafe";
+        break;
       }
     }
     result = S(unsafe_prefix)->add(name);
@@ -79,6 +75,8 @@ SourceList *GenUnsafeCode(FuncList *funcs, StrSet *filter) {
   funcs = funcs->sort(CmpFuncSpec);
   for (Int i = 0; i < funcs->len(); i++) {
     FuncSpec *func = funcs->at(i);
+    if (!filter->contains(func->name))
+      continue;
     GenUnsafeCode(func, filter);
     if (!func->source->rewritten_funcs) {
       func->source->rewritten_funcs = new FuncList();
@@ -89,26 +87,57 @@ SourceList *GenUnsafeCode(FuncList *funcs, StrSet *filter) {
   return result;
 }
 
+bool UpdateUnsafeSection(SectionSpec *section, StrSet *filter) {
+  bool result = false;
+  SourceFile *source = section->source;
+  PosList *unsafe_calls = source->unsafe_calls;
+  TokenList *tokens = source->tokens;
+  for (Int i = 0; i < unsafe_calls->len(); i++) {
+    Int pos = unsafe_calls->at(i);
+    Token *token = &tokens->at(pos);
+    if (filter->contains(token->str)) {
+      token->str = UnsafeName(token->str);
+      result = true;
+    }
+  }
+  return result;
+}
+
+SourceList *UpdateUnsafeSections(SectionList *sections, StrSet *filter) {
+  SourceList *result = new SourceList();
+  for (Int i = 0; i < sections->len(); i++) {
+    if (UpdateUnsafeSection(sections->at(i), filter))
+      result->add(sections->at(i)->source);
+  }
+  return result;
+}
+
 void RewriteSourceFile(SourceFile *source) {
+  if (source->rewritten)
+    return;
+  source->rewritten = true;
   Token nl(SymEOL, Intern("\n", 1));
   FuncList *funcs = source->rewritten_funcs;
   TokenList *tokens = source->tokens;
   TokenList *rewritten = new TokenList();
-  rewritten->add(tokens->range_excl(0, funcs->first()->end));
-  rewritten->add(nl);
-  rewritten->add(nl);
-  rewritten->add(funcs->first()->unsafe_code);
-  for (Int i = 1; i < funcs->len(); i++) {
-    rewritten->add(tokens->range_incl( funcs->at(i-1)->end + 1,
-      funcs->at(i)->end));
+  if (!funcs || funcs->len() == 0) {
+    rewritten = tokens; // only unsafe sections
+  } else {
+    rewritten->add(tokens->range_incl(0, funcs->first()->end));
     rewritten->add(nl);
     rewritten->add(nl);
-    rewritten->add(funcs->at(i)->unsafe_code);
+    rewritten->add(funcs->first()->unsafe_code);
+    for (Int i = 1; i < funcs->len(); i++) {
+      rewritten->add(tokens->range_incl( funcs->at(i-1)->end + 1,
+        funcs->at(i)->end));
+      rewritten->add(nl);
+      rewritten->add(nl);
+      rewritten->add(funcs->at(i)->unsafe_code);
+    }
+    rewritten->add(tokens->range_excl(funcs->last()->end + 1,
+      tokens->len()));
   }
-  rewritten->add(tokens->range_excl(funcs->last()->end + 1,
-    tokens->len()));
   source->rewritten_code = rewritten;
-
 }
 
 Str *TokenToStr(Token token) {
@@ -125,5 +154,6 @@ void RewriteSourceFiles(SourceList *sources) {
     Str *code = StrJoin(source->rewritten_code->map<Str *>(TokenToStr), "");
     PrintLn(filename);
     WriteFile(filename, code);
+    rename(filename->c_str(), source->filename->c_str());
   }
 }
