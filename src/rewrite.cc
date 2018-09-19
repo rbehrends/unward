@@ -152,7 +152,6 @@ void RewriteSourceFiles(SourceList *sources) {
     SourceFile *source = sources->at(i);
     Str *filename = source->filename->clone()->add(".unsafe");
     Str *code = StrJoin(source->rewritten_code->map<Str *>(TokenToStr), "");
-    PrintLn(filename);
     WriteFile(filename, code);
     rename(filename->c_str(), source->filename->c_str());
   }

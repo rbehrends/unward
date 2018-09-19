@@ -1,6 +1,7 @@
 #include "lib.h"
 
 #include <sys/stat.h>
+#include <limits.h>
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
@@ -191,7 +192,11 @@ void PrintErrLn(Int i) {
 }
 
 Str *Pwd() {
-  char *path = getwd(NULL);
+#ifdef PATH_MAX
+  char *path = getcwd(NULL, PATH_MAX);
+#else
+  char *path = getcwd(NULL, 8192);
+#endif
   Str *result = new Str(path);
   free(path);
   return result;
@@ -257,11 +262,9 @@ StrArr *ReadDir(const char *path) {
     struct dirent *entry = readdir(dir);
     if (!entry)
       break;
-    if (entry->d_namlen == 1 && entry->d_name[0] == '.')
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
       continue;
-    if (entry->d_namlen == 2 && memcmp(entry->d_name, "..", 2) == 0)
-      continue;
-    result->add(new Str(entry->d_name, entry->d_namlen));
+    result->add(new Str(entry->d_name));
   }
   closedir(dir);
   return result;
