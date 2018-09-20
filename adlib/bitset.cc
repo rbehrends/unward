@@ -111,7 +111,7 @@ BitMatrix *Clone(BitMatrix *mat) {
 }
 
 bool IsMatrix(BitMatrix *mat) {
-  if (mat->len() == 0 || mat->at(0)->len() == 0)
+  if (mat->len() != 0 && mat->at(0)->len() == 0)
     return false;
   for (Int i = 1; i < mat->len(); i++) {
     if (mat->at(i - 1)->len() != mat->at(i)->len()) {
@@ -123,6 +123,8 @@ bool IsMatrix(BitMatrix *mat) {
 
 BitMatrix *Transpose(BitMatrix *mat) {
   require(IsMatrix(mat), "not a proper matrix");
+  if (mat->len() == 0)
+    return MakeBitMatrix(0, 0);
   Int rows = mat->len();
   Int cols = mat->at(0)->len();
   BitMatrix *result = MakeBitMatrix(cols, rows);
@@ -141,6 +143,8 @@ BitMatrix *TransitiveClosure(BitMatrix *mat) {
   // Floyd-Warshall algorithm
   require(IsMatrix(mat), "not a proper matrix");
   Int rows = mat->len();
+  if (rows == 0)
+    return MakeBitMatrix(0, 0);
   Int cols = mat->at(0)->len();
   require(mat->len() == mat->at(0)->len(), "not a square matrix");
   mat = Clone(mat);

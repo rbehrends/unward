@@ -186,7 +186,9 @@ BitMatrix *BuildCallGraph(FuncList *funcs, CallDirection mode) {
 FuncList *FindAllCalls(BitMatrix *callgraph, FuncList *funcs, StrArr* base) {
   FuncList *result = new FuncList();
   StrSet *basefuncs = new StrSet(base);
-  BitSet *set = new BitSet(callgraph->at(0)->len());
+  if (callgraph->len() == 0)
+    return result;
+  BitSet *set = new BitSet(callgraph->first()->len());
   for (Int i = 0; i < callgraph->len(); i++) {
     FuncSpec *func = funcs->at(i);
     if (basefuncs->contains(func->name)) {
