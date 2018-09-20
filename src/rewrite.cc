@@ -144,13 +144,19 @@ Str *TokenToStr(Token token) {
   return token.str;
 }
 
-void RewriteSourceFiles(SourceList *sources) {
+void RewriteSourceFiles(SourceList *sources, Str *outputdir) {
   for (Int i = 0; i < sources->len(); i++) {
     RewriteSourceFile(sources->at(i));
   }
   for (Int i = 0; i < sources->len(); i++) {
     SourceFile *source = sources->at(i);
-    Str *filename = source->filename->clone()->add(".unsafe");
+    Str *filename;
+    if (outputdir) {
+      PrintLn("--output is not yet supported");
+      exit(1);
+    } else {
+      filename = source->filename->clone()->add(".unsafe");
+    }
     Str *code = StrJoin(source->rewritten_code->map<Str *>(TokenToStr), "");
     WriteFile(filename, code);
     rename(filename->c_str(), source->filename->c_str());
