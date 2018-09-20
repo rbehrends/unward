@@ -6,7 +6,7 @@
 #include "rewrite.h"
 
 #define ROOT_FUNCS A("PTR_BAG", "CONST_PTR_BAG")
-#define BLACKLIST A("CHANGED_BAG")->add(ROOT_FUNCS)
+#define BLACKLIST A("CHANGED_BAG")
 
 void Warning(Str *s) {
   printf("warning: %s\n", s->c_str());
@@ -137,14 +137,13 @@ void Main() {
   used_funcnames->intersect_in_place(wardfuncnames);
   // Step 7: Remove false positives; this is right now only CHANGED_BAG(),
   // which we know to be safe and which shouldn't have guards for
-  // performance reasons, as well as PTR_BAG() and CONST_PTR_BAG(), for
-  // which we have to do the conversion manually.
+  // performance reasons.
   used_funcnames->diff_in_place(new StrSet(BLACKLIST));
-  // Step 8: Rewrite all files with unprotected sections.
   SourceList *unsafe_sources = UpdateUnsafeSections(unprotected,
     used_funcnames);
   RewriteSourceFiles(unsafe_sources, opts->OutputDir);
   // Step 9: Rewrite header files with unsafe functions.
-  unsafe_sources = GenUnsafeCode(funcs, used_funcnames);
+  StrSet *dont_rewrite = new StrSet(ROOT_FUNCS);
+  unsafe_sources = GenUnsafeCode(funcs, used_funcnames, dont_rewrite);
   RewriteSourceFiles(unsafe_sources, opts->OutputDir);
 }

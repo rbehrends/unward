@@ -70,11 +70,14 @@ void GenUnsafeCode(FuncSpec *func, StrSet *filter) {
   func->unsafe_code = unsafe_code;
 }
 
-SourceList *GenUnsafeCode(FuncList *funcs, StrSet *filter) {
+SourceList *GenUnsafeCode(FuncList *funcs, StrSet *filter,
+    StrSet *dont_rewrite) {
   SourceList *result = new SourceList();
   funcs = funcs->sort(CmpFuncSpec);
   for (Int i = 0; i < funcs->len(); i++) {
     FuncSpec *func = funcs->at(i);
+    if (dont_rewrite->contains(func->name))
+      continue;
     if (!filter->contains(func->name))
       continue;
     GenUnsafeCode(func, filter);
