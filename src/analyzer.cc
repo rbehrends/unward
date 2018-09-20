@@ -102,12 +102,12 @@ void NumberFuncList(FuncList *funcs) {
 }
 
 PosList *FindCalls(FuncMap *funcmap, SourceFile *source,
-    Int start, Int end) {
+    Int start, Int end, bool func) {
   PosList *calls = new PosList();
   Int pos = start;
   Int sympos = 0;
   TokenList *tokens = source->tokens;
-  SkipUntil(tokens, pos, BIT(SymLBrace));
+  if (func) SkipUntil(tokens, pos, BIT(SymLBrace));
   while (pos <= end) {
     Token *id = SkipUntil(tokens, pos, BIT(SymIdent));
     if (pos > end)
@@ -128,7 +128,7 @@ PosList *FindCalls(FuncMap *funcmap, SourceFile *source,
 
 void FindCalls(FuncMap *funcmap, FuncSpec *func) {
   PosList *callpositions =
-    FindCalls(funcmap, func->source, func->start, func->end);
+    FindCalls(funcmap, func->source, func->start, func->end, true);
   func->callpositions = callpositions;
   StrSet *callnames = new StrSet();
   for (Int i = 0; i < callpositions->len(); i++) {
@@ -273,8 +273,10 @@ SectionList *FindUnsafeSections(SourceList *sources, FuncList *funcs) {
       result->add(sec);
       PosList *calls = new PosList();
       for (Int i = 0; i < sec->start->len(); i++) {
-        calls->add(FindCalls(funcmap, source, sec->start->at(i),
-          sec->end->at(i)));
+        TokenList *tokens = source->tokens;
+        PosList *seccalls = FindCalls(funcmap, source, sec->start->at(i),
+            sec->end->at(i), false);
+        calls->add(seccalls);
       }
       source->unsafe_calls = calls;
     }
@@ -289,10 +291,7 @@ StrSet *FindCalls(FuncMap *funcmap, SectionList *sections) {
     TokenList *tokens = sec->source->tokens;
     PosList *start = sec->start;
     PosList *end = sec->end;
-    PosList *calls = new PosList();
-    for (Int j = 0; j < start->len(); j++) {
-      calls->add(FindCalls(funcmap, sec->source, start->at(j), end->at(j)));
-    }
+    PosList *calls = sec->source->unsafe_calls;
     for (Int j = 0; j < calls->len(); j++) {
       result->add(tokens->at(calls->at(j)).str);
     }
