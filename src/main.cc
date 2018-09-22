@@ -34,7 +34,7 @@ StrArr *FindFiles(StrArr *paths) {
 #ifdef HAVE_DIRENT_H
   StrArr *result = new StrArr();
   for (Int i = 0; i < paths->len(); i++) {
-    StrArr *files = ReadDirRecursive(paths->at(i));
+    StrArr *files = ListFileTree(paths->at(i));
     result->add(files);
   }
   return result;

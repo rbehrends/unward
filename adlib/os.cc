@@ -213,10 +213,10 @@ bool ChDir(Str *path) {
 bool FileStat(FileInfo &info, const char *path, bool follow_links) {
   struct stat st;
   if (follow_links) {
-    if (lstat(path, &st) < 0)
+    if (stat(path, &st) < 0)
       return false;
   } else {
-    if (stat(path, &st) < 0)
+    if (lstat(path, &st) < 0)
       return false;
   }
   memset(&info, 0, sizeof(info));
@@ -252,7 +252,7 @@ FileInfo *FileStat(Str *path, bool follow_links) {
   return FileStat(path->c_str(), follow_links);
 }
 
-StrArr *ReadDir(const char *path) {
+StrArr *ListFiles(const char *path) {
 #ifdef HAVE_DIRENT_H
   StrArr *result = new StrArr();
   DIR *dir = opendir(path);
@@ -273,27 +273,25 @@ StrArr *ReadDir(const char *path) {
 #endif
 }
 
-StrArr *ReadDir(Str *path) {
-  return ReadDir(path->c_str());
+StrArr *ListFiles(Str *path) {
+  return ListFiles(path->c_str());
 }
 
-#define FILE_SEP "/"
-
-static void WalkDir(StrArr *acc, const char *path, bool with_dirs) {
-  StrArr *files = ReadDir(path);
+static void WalkDir(StrArr *acc, const char *path, int mode) {
+  StrArr *files = ListFiles(path);
   if (!files)
     return;
   FileInfo info;
   for (Int i = 0; i < files->len(); i++) {
     Str *newpath = new Str(path);
-    if (!newpath->ends_with(FILE_SEP))
-      newpath->add(FILE_SEP);
+    if (!newpath->ends_with(PathSeparator))
+      newpath->add(PathSeparator);
     newpath->add(files->at(i));
     if (FileStat(info, newpath)) {
       if (info.is_dir) {
-        newpath->add(FILE_SEP);
-        WalkDir(acc, newpath->c_str(), with_dirs);
-        if (with_dirs)
+        newpath->add(PathSeparator);
+        WalkDir(acc, newpath->c_str(), mode);
+        if (mode & ListFilesAndDirs)
           acc->add(newpath);
       } else {
         acc->add(newpath);
@@ -302,23 +300,122 @@ static void WalkDir(StrArr *acc, const char *path, bool with_dirs) {
   }
 }
 
-StrArr *ReadDirRecursive(const char *path, bool with_dirs) {
+StrArr *ListFileTree(const char *path, int mode) {
   StrArr *result = new StrArr();
   FileInfo info;
-  if (FileStat(info, path)) {
+  if (FileStat(info, path, true)) {
     if (info.is_dir) {
       Str *dir = new Str(path);
-      if (!dir->ends_with(FILE_SEP))
-        dir->add(FILE_SEP);
+      if (!dir->ends_with(PathSeparator))
+        dir->add(PathSeparator);
+      Int prefixlen = dir->len();
       result->add(dir);
-      WalkDir(result, path, with_dirs);
+      WalkDir(result, dir->c_str(), mode);
+      if (mode & ListFilesRelative) {
+        for (Int i = 0; i < result->len(); i++) {
+          result->at(i)->remove(0, prefixlen);
+        }
+      }
     } else {
-      result->add(S(path));
+      if ((mode & ListFilesRelative) == 0)
+        result->add(S(path));
     }
   }
   return result;
 }
 
-StrArr *ReadDirRecursive(Str *path, bool with_dirs) {
-  return ReadDirRecursive(path->c_str(), with_dirs);
+StrArr *ListFileTree(Str *path, int mode) {
+  return ListFileTree(path->c_str(), mode);
+}
+
+Str *DirName(Str *path) {
+  Int pos = path->rfind(PathSeparator);
+  if (pos == NOWHERE) {
+    return path->clone();
+  } else {
+    return path->range_excl(0, pos);
+  }
+}
+
+Str *BaseName(Str *path) {
+  Int pos = path->rfind(PathSeparator);
+  if (pos == NOWHERE) {
+    return path->clone();
+  } else {
+    return path->range_excl(pos+1, path->len());
+  }
+}
+
+Str *FileExtension(Str *path) {
+  Int slash = path->rfind(PathSeparator);
+  Int dot = path->rfind('.');
+  if (dot == NOWHERE || dot < slash) {
+    return S("");
+  } else {
+    return path->range_excl(dot, path->len());
+  }
+}
+
+
+static bool MakeDirRec(Str *path) {
+  FileInfo info;
+  path = path->clone();
+  for (Int i = 1; i < path->len();) {
+    Int p = path->find(PathSeparator, i);
+    if (p == NOWHERE)
+      break;
+    path->at(p) = '\0';
+    if (FileStat(info, path, true)) {
+      if (!info.is_dir)
+        return false;
+    } else if (mkdir(path->c_str(), 0777) < 0) {
+      return false;
+    }
+    path->at(p) = PathSeparator[0];
+    i = p+1;
+  }
+  if (FileStat(info, path, true)) {
+    if (!info.is_dir)
+      return false;
+  } else if (mkdir(path->c_str(), 0777) < 0) {
+    return false;
+  }
+  return true;
+}
+
+bool MakeDir(const char *path, bool recursive) {
+  if (!recursive)
+    return mkdir(path, 0777) >= 0;
+  return MakeDirRec(S(path));
+}
+
+bool MakeDir(Str *path, bool recursive) {
+  if (!recursive)
+    return mkdir(path->c_str(), 0777) >= 0;
+  return MakeDirRec(path);
+}
+
+bool RemoveDir(const char *path) {
+  return rmdir(path) >= 0;
+}
+
+bool RemoveDir(Str *path) {
+  return RemoveDir(path->c_str());
+}
+
+bool RemoveFile(const char *path) {
+  return unlink(path) >= 0;
+}
+
+bool RemoveFile(Str *path) {
+  return RemoveFile(path->c_str());
+}
+
+
+bool Rename(const char *path, const char *path2) {
+  return rename(path, path2) >= 0;
+}
+
+bool Rename(Str *path, Str *path2) {
+  return Rename(path->c_str(), path2->c_str());
 }

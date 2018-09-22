@@ -19,8 +19,8 @@ void Main() {
   Check(WriteFile("/dev/null", S("test")), "write bytes to file");
   static CStr args[] = { "17" };
   Check(System(S("exit"), StrArrLit(args)) == 17, "invoke shell");
-  Check(ReadDir(".")->len() > 0, "reading directories");
-  StrSet *files = new StrSet(ReadDir("adlib"));
-  files = new StrSet(ReadDirRecursive("."));
-  Check(files->contains(S("./" __FILE__)), "reading directories recursively");
+  Check(ListFiles(".")->len() > 0, "reading directories");
+  StrSet *files = new StrSet(ListFiles("adlib"));
+  files = new StrSet(ListFileTree(Pwd(), ListFilesRelative));
+  Check(files->contains(S(__FILE__)), "reading directories recursively");
 }

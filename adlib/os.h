@@ -26,14 +26,19 @@ void PrintErrLn(Str *str);
 void PrintErrLn(const char *str);
 void PrintErrLn(Int i);
 
+enum ListFilesMode {
+  ListFilesAndDirs = 1,
+  ListFilesRelative = 2,
+};
+
 Str *Pwd();
 bool ChDir(Str *path);
 bool ChDir(const char *path);
-StrArr *ReadDir(const char *path);
-StrArr *ReadDir(Str *path);
-StrArr *ReadDir(const char *path);
-StrArr *ReadDirRecursive(Str *path, bool with_dirs = false);
-StrArr *ReadDirRecursive(const char *path, bool with_dirs = false);
+StrArr *ListFiles(const char *path);
+StrArr *ListFiles(Str *path);
+StrArr *ListFiles(const char *path);
+StrArr *ListFileTree(Str *path, int mode = 0);
+StrArr *ListFileTree(const char *path, int mode = 0);
 
 struct FileInfo : PtrFreeGC {
   bool is_dir;
@@ -50,8 +55,21 @@ struct FileInfo : PtrFreeGC {
 #endif
 };
 
+static const char *PathSeparator = "/";
+
 FileInfo *FileStat(Str *path);
 bool FileStat(FileInfo &info, const char *path, bool follow_links = false);
 bool FileStat(FileInfo &info, Str *path, bool follow_links = false);
 FileInfo *FileStat(const char *path, bool follow_links = false);
 FileInfo *FileStat(Str *path, bool follow_links = false);
+Str *DirName(Str *path);
+Str *BaseName(Str *path);
+Str *FileExtension(Str *path);
+bool MakeDir(Str *path, bool recursive = false);
+bool MakeDir(const char *path, bool recursive = false);
+bool RemoveDir(Str *path);
+bool RemoveDir(const char *path);
+bool RemoveFile(Str *path);
+bool RemoveFile(const char *path);
+bool Rename(Str *path, Str *path2);
+bool Rename(const char *path, const char *path2);

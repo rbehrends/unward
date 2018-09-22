@@ -137,6 +137,7 @@ public:
   }
   Arr<T> *remove(Int at);
   Arr<T> *remove(Int start, Int count);
+  Arr<T> *set_len(Int len);
   Arr<T> *fill(Int start, Int count, T value);
   Arr<T> *subarr(Int start, Int count);
   Arr<T> *range_incl(Int start, Int end) {
@@ -361,10 +362,30 @@ Arr<T> *Arr<T>::remove(Int start, Int count) {
   require(start >= 0 && count >= 0 && start + count <= _len,
     "index out of range");
   Int end = start + count;
+  if (count <= 0) return 0;
   memmove(_data + start, _data + end, sizeof(T) * (_len - end));
   memset(_data + _len - count, 0, sizeof(T) * count);
   _len -= count;
   return shrink(false);
+}
+
+template <typename T>
+Arr<T> *Arr<T>::remove(Int at) {
+  return remove(at, 1);
+}
+
+template <typename T>
+Arr<T> *Arr<T>::set_len(Int len) {
+  if (len > _len) {
+    expand(len);
+    memset(_data + _len, 0, sizeof(T) * (len - _len));
+    _len = len;
+  } else if (len < _len) {
+    memset(_data + len, 0, sizeof(T) * (_len - len));
+    _len = len;
+    return shrink(false);
+  }
+  return this;
 }
 
 template <typename T>

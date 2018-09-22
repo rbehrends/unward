@@ -104,6 +104,9 @@ public:
   Str *add(const char *s) {
     return add(s, strlen(s));
   }
+  Str *remove(Int start, Int count);
+  Str *remove(Int at);
+  Str *set_len(Int len);
   Str *substr(Int start, Int count);
   Str *range_incl(Int start, Int end) {
     return substr(start, end - start + 1);

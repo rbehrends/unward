@@ -400,7 +400,7 @@ if {[file exists $postconf]} {
 
 make-config-header adlib/config-defs.h -auto USE_* 
 make-template cnf/config.h.in adlib/config.h
-make-template Makefile.in Makefile
+make-template cnf/Makefile.in Makefile
 
 if {[file exists $postsetup]} {
   source $postsetup

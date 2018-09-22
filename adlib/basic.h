@@ -11,7 +11,7 @@ typedef const char *CStr;
 
 #define NUMOF(a) (sizeof(a) / sizeof(a[0]))
 
-#define NOWHERE ((Word) -1)
+#define NOWHERE ((Int) -1)
 
 static inline Int nextPow2(Int n) {
   Int result = 1;

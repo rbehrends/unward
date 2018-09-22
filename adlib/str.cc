@@ -51,6 +51,36 @@ StrArr *Str::split(char ch) {
   return result;
 }
 
+Str *Str::remove(Int start, Int count) {
+  Int end = start + count;
+  require(start >= 0 && start <= _len, "index out of range");
+  require(end <= _len, "index out of range");
+  if (count <= 0) return this;
+  memmove(_data + start, _data + end, _len - end);
+  _len -= count;
+  _data[_len] ='\0';
+  return shrink(false);
+}
+
+Str *Str::remove(Int at) {
+  return remove(at, 1);
+}
+
+Str *Str::set_len(Int len) {
+  require (len >= 0, "invalid length");
+  if (len > _len) {
+    expand(len);
+    memset(_data + _len, 0, len - _len + 1);
+    _len = len;
+  }
+  else if (len < _len) {
+    memset(_data + len, 0, _len - len);
+    _len = len;
+    return shrink(false);
+  }
+  return this;
+}
+
 StrArr *Str::split(const char *s) {
   return split(s, strlen(s));
 }
