@@ -170,7 +170,9 @@ void RewriteSourceFiles(SourceList *sources, Options *opts) {
     Str *code = StrJoin(source->rewritten_code->map<Str *>(TokenToStr), "");
     if (output_dir) {
       MakeDir(DirName(filename), true);
-      WriteFile(filename, code);
+      Str *oldcode = ReadFile(filename);
+      if (!oldcode || !oldcode->eq(code))
+        WriteFile(filename, code);
     } else {
       WriteFile(filename, code);
       rename(filename->c_str(), source->filename->c_str());
