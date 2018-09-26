@@ -2,8 +2,10 @@
 #include "adlib/map.h"
 #include "adlib/set.h"
 
+#include "args.h"
 #include "analyzer.h"
 #include "lexer.h"
+#include "rewrite.h"
 
 int CmpFuncSpec(FuncSpec *a, FuncSpec *b) {
   int result = Cmp(a->source->filename, b->source->filename);
@@ -147,21 +149,31 @@ Str *TokenToStr(Token token) {
   return token.str;
 }
 
-void RewriteSourceFiles(SourceList *sources, Str *outputdir) {
+void RewriteSourceFiles(SourceList *sources, Options *opts) {
+  Str *output_dir = opts->OutputDir;
+  Str *input_dir = NULL;
+  if (output_dir)
+      input_dir = opts->InputFiles->first();
   for (Int i = 0; i < sources->len(); i++) {
     RewriteSourceFile(sources->at(i));
   }
   for (Int i = 0; i < sources->len(); i++) {
     SourceFile *source = sources->at(i);
     Str *filename;
-    if (outputdir) {
-      PrintLn("--output is not yet supported");
-      exit(1);
+    if (output_dir) {
+      filename = source->filename;
+      filename = filename->range_excl(input_dir->len(), filename->len());
+      filename = output_dir->clone()->add(filename);
     } else {
       filename = source->filename->clone()->add(".unsafe");
     }
     Str *code = StrJoin(source->rewritten_code->map<Str *>(TokenToStr), "");
-    WriteFile(filename, code);
-    rename(filename->c_str(), source->filename->c_str());
+    if (output_dir) {
+      MakeDir(DirName(filename), true);
+      WriteFile(filename, code);
+    } else {
+      WriteFile(filename, code);
+      rename(filename->c_str(), source->filename->c_str());
+    }
   }
 }

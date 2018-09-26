@@ -94,6 +94,10 @@ void Main() {
   if (opts->InPlace == (opts->OutputDir != NULL)) {
     Error(S("must specify exactly one of --inplace (-i) and --output (-o)"));
   }
+  if (opts->OutputDir != NULL && opts->InputFiles->len() != 1) {
+    Error(S("If -o is specified as an option, there must be"
+            "only one input directory"));
+  }
   StrArr *files = FindFiles(opts->InputFiles);
   for (Int i = 0; i < files->len(); i++) {
     Str *file = files->at(i);
@@ -139,11 +143,19 @@ void Main() {
   // which we know to be safe and which shouldn't have guards for
   // performance reasons.
   used_funcnames->diff_in_place(new StrSet(BLACKLIST));
+  // Step 8: Perform in-memory transformations of the source files.
   SourceList *unsafe_sources = UpdateUnsafeSections(unprotected,
     used_funcnames);
-  RewriteSourceFiles(unsafe_sources, opts->OutputDir);
-  // Step 9: Rewrite header files with unsafe functions.
   StrSet *dont_rewrite = new StrSet(ROOT_FUNCS);
-  unsafe_sources = GenUnsafeCode(funcs, used_funcnames, dont_rewrite);
-  RewriteSourceFiles(unsafe_sources, opts->OutputDir);
+  SourceList *unsafe_sources2 = GenUnsafeCode(funcs, used_funcnames,
+    dont_rewrite);
+  // Step 9: Write files to disk
+  if (!opts->OutputDir) {
+    // only changed source files
+    RewriteSourceFiles(unsafe_sources, opts);
+    RewriteSourceFiles(unsafe_sources2, opts);
+  } else {
+    // write all to the output directory
+    RewriteSourceFiles(InputSources, opts);
+  }
 }

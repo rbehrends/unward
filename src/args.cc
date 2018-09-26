@@ -22,7 +22,7 @@ Options* ParseArgs() {
     Str *arg = Args->at(i);
     if (mode == 'o') {
       opts->OutputDir = arg->clone();
-      mode = '0';
+      mode = 0;
       continue;
     }
     char *pos = arg->c_str();
