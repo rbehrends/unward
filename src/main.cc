@@ -101,7 +101,9 @@ void Main() {
   StrArr *files = FindFiles(opts->InputFiles);
   for (Int i = 0; i < files->len(); i++) {
     Str *file = files->at(i);
-    if (!file->ends_with(".h") && !file->ends_with(".c"))
+    if (!file->ends_with(".h") &&
+        !file->ends_with(".c") &&
+        !file->ends_with(".cc"))
       continue;
     if (!InputFileMap->contains(file)) {
       SourceFile *source = new SourceFile();

@@ -8,6 +8,7 @@ void Help() {
   PrintLn("");
   PrintLn("  -o  --output DIR    output generated code to DIR");
   PrintLn("  -i  --inplace       rewrite source files in place");
+  PrintLn("  -l  --line          add #line directives");
   PrintLn("  -h  --help          display this message");
   PrintLn("");
 }
@@ -38,6 +39,8 @@ Options* ParseArgs() {
       "-o" (any +) end { opts->OutputDir = arg->range_excl(2, arg->len()); }
       "--inplace" end { opts->InPlace = true; continue; }
       "-i" end { opts->InPlace = true; continue; }
+      "--line" end { opts->LineDirs = true; continue; }
+      "-l" end { opts->LineDirs = true; continue; }
       "--help" end { Help(); exit(0); }
       "-h" end { Help(); exit(0); }
       "-" {

@@ -10,6 +10,7 @@ void Help() {
   PrintLn("");
   PrintLn("  -o  --output DIR    output generated code to DIR");
   PrintLn("  -i  --inplace       rewrite source files in place");
+  PrintLn("  -l  --line          add #line directives");
   PrintLn("  -h  --help          display this message");
   PrintLn("");
 }
@@ -28,7 +29,7 @@ Options* ParseArgs() {
     char *pos = arg->c_str();
     char *marker;
     
-#line 32 "src/args.cc"
+#line 33 "src/args.cc"
 {
 	char yych;
 	yych = *pos;
@@ -38,36 +39,38 @@ Options* ParseArgs() {
 	}
 yy2:
 	++pos;
-#line 49 "src/args.re"
+#line 52 "src/args.re"
 	{
         opts->InputFiles->add(arg);
 	continue;
       }
-#line 47 "src/args.cc"
+#line 48 "src/args.cc"
 yy4:
 	yych = *(marker = ++pos);
 	switch (yych) {
 	case '-':	goto yy6;
 	case 'h':	goto yy8;
 	case 'i':	goto yy9;
-	case 'o':	goto yy10;
+	case 'l':	goto yy10;
+	case 'o':	goto yy11;
 	default:	goto yy5;
 	}
 yy5:
-#line 43 "src/args.re"
+#line 46 "src/args.re"
 	{
             PrintLn(S("Invalid option: ")->add(arg));
 	    PrintLn("");
             Help();
             exit(1);
           }
-#line 65 "src/args.cc"
+#line 67 "src/args.cc"
 yy6:
 	yych = *++pos;
 	switch (yych) {
-	case 'h':	goto yy11;
-	case 'i':	goto yy12;
-	case 'o':	goto yy13;
+	case 'h':	goto yy12;
+	case 'i':	goto yy13;
+	case 'l':	goto yy14;
+	case 'o':	goto yy15;
 	default:	goto yy7;
 	}
 yy7:
@@ -75,153 +78,189 @@ yy7:
 	goto yy5;
 yy8:
 	yych = *++pos;
-	if (yych <= 0x00) goto yy14;
+	if (yych <= 0x00) goto yy16;
 	goto yy7;
 yy9:
 	yych = *++pos;
-	if (yych <= 0x00) goto yy16;
+	if (yych <= 0x00) goto yy18;
 	goto yy7;
 yy10:
 	yych = *++pos;
-	if (yych <= 0x00) goto yy18;
-	goto yy20;
+	if (yych <= 0x00) goto yy20;
+	goto yy7;
 yy11:
 	yych = *++pos;
-	switch (yych) {
-	case 'e':	goto yy22;
-	default:	goto yy7;
-	}
+	if (yych <= 0x00) goto yy22;
+	goto yy24;
 yy12:
 	yych = *++pos;
 	switch (yych) {
-	case 'n':	goto yy23;
+	case 'e':	goto yy26;
 	default:	goto yy7;
 	}
 yy13:
 	yych = *++pos;
 	switch (yych) {
-	case 'u':	goto yy24;
+	case 'n':	goto yy27;
 	default:	goto yy7;
 	}
 yy14:
-	++pos;
-#line 42 "src/args.re"
-	{ Help(); exit(0); }
-#line 111 "src/args.cc"
+	yych = *++pos;
+	switch (yych) {
+	case 'i':	goto yy28;
+	default:	goto yy7;
+	}
+yy15:
+	yych = *++pos;
+	switch (yych) {
+	case 'u':	goto yy29;
+	default:	goto yy7;
+	}
 yy16:
 	++pos;
-#line 40 "src/args.re"
-	{ opts->InPlace = true; continue; }
-#line 116 "src/args.cc"
+#line 45 "src/args.re"
+	{ Help(); exit(0); }
+#line 124 "src/args.cc"
 yy18:
 	++pos;
-#line 37 "src/args.re"
-	{ mode = 'o'; continue; }
-#line 121 "src/args.cc"
+#line 41 "src/args.re"
+	{ opts->InPlace = true; continue; }
+#line 129 "src/args.cc"
 yy20:
-	yych = *++pos;
-	if (yych <= 0x00) goto yy25;
-	goto yy20;
+	++pos;
+#line 43 "src/args.re"
+	{ opts->LineDirs = true; continue; }
+#line 134 "src/args.cc"
 yy22:
-	yych = *++pos;
-	switch (yych) {
-	case 'l':	goto yy27;
-	default:	goto yy7;
-	}
-yy23:
-	yych = *++pos;
-	switch (yych) {
-	case 'p':	goto yy28;
-	default:	goto yy7;
-	}
-yy24:
-	yych = *++pos;
-	switch (yych) {
-	case 't':	goto yy29;
-	default:	goto yy7;
-	}
-yy25:
 	++pos;
 #line 38 "src/args.re"
-	{ opts->OutputDir = arg->range_excl(2, arg->len()); }
-#line 148 "src/args.cc"
+	{ mode = 'o'; continue; }
+#line 139 "src/args.cc"
+yy24:
+	yych = *++pos;
+	if (yych <= 0x00) goto yy30;
+	goto yy24;
+yy26:
+	yych = *++pos;
+	switch (yych) {
+	case 'l':	goto yy32;
+	default:	goto yy7;
+	}
 yy27:
 	yych = *++pos;
 	switch (yych) {
-	case 'p':	goto yy30;
+	case 'p':	goto yy33;
 	default:	goto yy7;
 	}
 yy28:
 	yych = *++pos;
 	switch (yych) {
-	case 'l':	goto yy31;
+	case 'n':	goto yy34;
 	default:	goto yy7;
 	}
 yy29:
 	yych = *++pos;
 	switch (yych) {
-	case 'p':	goto yy32;
+	case 't':	goto yy35;
 	default:	goto yy7;
 	}
 yy30:
-	yych = *++pos;
-	if (yych <= 0x00) goto yy33;
-	goto yy7;
-yy31:
-	yych = *++pos;
-	switch (yych) {
-	case 'a':	goto yy35;
-	default:	goto yy7;
-	}
+	++pos;
+#line 39 "src/args.re"
+	{ opts->OutputDir = arg->range_excl(2, arg->len()); }
+#line 172 "src/args.cc"
 yy32:
 	yych = *++pos;
 	switch (yych) {
-	case 'u':	goto yy36;
+	case 'p':	goto yy36;
 	default:	goto yy7;
 	}
 yy33:
-	++pos;
-#line 41 "src/args.re"
-	{ Help(); exit(0); }
-#line 187 "src/args.cc"
+	yych = *++pos;
+	switch (yych) {
+	case 'l':	goto yy37;
+	default:	goto yy7;
+	}
+yy34:
+	yych = *++pos;
+	switch (yych) {
+	case 'e':	goto yy38;
+	default:	goto yy7;
+	}
 yy35:
 	yych = *++pos;
 	switch (yych) {
-	case 'c':	goto yy37;
+	case 'p':	goto yy39;
 	default:	goto yy7;
 	}
 yy36:
 	yych = *++pos;
-	switch (yych) {
-	case 't':	goto yy38;
-	default:	goto yy7;
-	}
+	if (yych <= 0x00) goto yy40;
+	goto yy7;
 yy37:
 	yych = *++pos;
 	switch (yych) {
-	case 'e':	goto yy39;
+	case 'a':	goto yy42;
 	default:	goto yy7;
 	}
 yy38:
 	yych = *++pos;
-	if (yych <= 0x00) goto yy40;
+	if (yych <= 0x00) goto yy43;
 	goto yy7;
 yy39:
 	yych = *++pos;
-	if (yych <= 0x00) goto yy42;
-	goto yy7;
+	switch (yych) {
+	case 'u':	goto yy45;
+	default:	goto yy7;
+	}
 yy40:
 	++pos;
-#line 36 "src/args.re"
-	{ mode = 'o'; continue; }
-#line 218 "src/args.cc"
+#line 44 "src/args.re"
+	{ Help(); exit(0); }
+#line 221 "src/args.cc"
 yy42:
+	yych = *++pos;
+	switch (yych) {
+	case 'c':	goto yy46;
+	default:	goto yy7;
+	}
+yy43:
 	++pos;
-#line 39 "src/args.re"
+#line 42 "src/args.re"
+	{ opts->LineDirs = true; continue; }
+#line 232 "src/args.cc"
+yy45:
+	yych = *++pos;
+	switch (yych) {
+	case 't':	goto yy47;
+	default:	goto yy7;
+	}
+yy46:
+	yych = *++pos;
+	switch (yych) {
+	case 'e':	goto yy48;
+	default:	goto yy7;
+	}
+yy47:
+	yych = *++pos;
+	if (yych <= 0x00) goto yy49;
+	goto yy7;
+yy48:
+	yych = *++pos;
+	if (yych <= 0x00) goto yy51;
+	goto yy7;
+yy49:
+	++pos;
+#line 37 "src/args.re"
+	{ mode = 'o'; continue; }
+#line 257 "src/args.cc"
+yy51:
+	++pos;
+#line 40 "src/args.re"
 	{ opts->InPlace = true; continue; }
-#line 223 "src/args.cc"
+#line 262 "src/args.cc"
 }
-#line 53 "src/args.re"
+#line 56 "src/args.re"
 
   }
   if (mode) {

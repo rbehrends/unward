@@ -46,6 +46,9 @@ void GenUnsafeCode(FuncSpec *func, StrSet *filter) {
   Int end = func->end;
   while (tokens->at(end+1).sym == SymWS)
     end++;
+  if (tokens->at(end+1).sym == SymEOL)
+    end++;
+  func->end = end;
   Int funcpos = -1;
   for (Int pos = start; pos <= end; pos++) {
     switch (tokens->at(pos).sym) {
@@ -61,6 +64,10 @@ void GenUnsafeCode(FuncSpec *func, StrSet *filter) {
   }
   func->callpositions->add(funcpos);
   TokenList *unsafe_code = tokens->range_incl(start, end);
+  if (unsafe_code->last().sym != SymEOL) {
+    Token nl(SymEOL, Intern("\n", 1));
+    unsafe_code->add(nl);
+  }
   PosList *callpositions = func->callpositions;
   for (Int i = 0; i < callpositions->len(); i++) {
     Int pos = callpositions->at(i);
@@ -117,27 +124,75 @@ SourceList *UpdateUnsafeSections(SectionList *sections, StrSet *filter) {
   return result;
 }
 
-void RewriteSourceFile(SourceFile *source) {
+#define ADD_LINE_DIR(p) \
+    do { \
+      Int pos = p; \
+      if (pos > 0 && tokens->at(pos-1).sym != SymEOL) { \
+        rewritten->add(nl); \
+      } \
+      rewritten->add(Token(SymPPOther, \
+        S("#line ") \
+          ->add(S(linenos->at((pos)))) \
+          ->add(" \"") \
+          ->add(source->filename) \
+          ->add("\"\n"))); \
+    } while(0)
+
+void RewriteSourceFile(SourceFile *source, Options *opts) {
   if (source->rewritten)
     return;
+  bool linedirs = opts->LineDirs;
   source->rewritten = true;
   Token nl(SymEOL, Intern("\n", 1));
   FuncList *funcs = source->rewritten_funcs;
   TokenList *tokens = source->tokens;
+  PosList *linenos = new PosList(tokens->len());
+  for (Int i = 0, lineno = 1; i < tokens->len(); i++) {
+    linenos->add(lineno);
+    switch (tokens->at(i).sym) {
+      case SymEOL:
+        lineno++;
+        break;
+      case SymComment:
+        {
+          Str *comment = tokens->at(i).str;
+          for (Int j = 0; j < comment->len(); j++)
+            lineno += (comment->at(j) == '\n');
+        }
+        break;
+      default:
+        break;
+    }
+  }
   TokenList *rewritten = new TokenList();
   if (!funcs || funcs->len() == 0) {
-    rewritten = tokens; // only unsafe sections
+    if (linedirs) {
+      ADD_LINE_DIR(0);
+      rewritten->add(tokens);
+    } else 
+      rewritten = tokens; // only unsafe sections
   } else {
+    if (linedirs)
+      ADD_LINE_DIR(0);
     rewritten->add(tokens->range_incl(0, funcs->first()->end));
     rewritten->add(nl);
     rewritten->add(nl);
+    if (linedirs) {
+      ADD_LINE_DIR(funcs->first()->start);
+    }
     rewritten->add(funcs->first()->unsafe_code);
+    if (linedirs)
+      ADD_LINE_DIR(funcs->first()->end+1);
     for (Int i = 1; i < funcs->len(); i++) {
       rewritten->add(tokens->range_incl( funcs->at(i-1)->end + 1,
         funcs->at(i)->end));
       rewritten->add(nl);
       rewritten->add(nl);
+      if (linedirs)
+        ADD_LINE_DIR(funcs->at(i)->start);
       rewritten->add(funcs->at(i)->unsafe_code);
+      if (linedirs)
+        ADD_LINE_DIR(funcs->at(i)->end+1);
     }
     rewritten->add(tokens->range_excl(funcs->last()->end + 1,
       tokens->len()));
@@ -155,7 +210,7 @@ void RewriteSourceFiles(SourceList *sources, Options *opts) {
   if (output_dir)
       input_dir = opts->InputFiles->first();
   for (Int i = 0; i < sources->len(); i++) {
-    RewriteSourceFile(sources->at(i));
+    RewriteSourceFile(sources->at(i), opts);
   }
   for (Int i = 0; i < sources->len(); i++) {
     SourceFile *source = sources->at(i);
