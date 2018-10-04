@@ -1,3 +1,4 @@
+PROGNAME=unward
 TCLSH=`autosetup/autosetup-find-tclsh`
 PREPROC_TCL=$(TCLSH) src/script/preproc.tcl
 src/lexer.h: src/lexer.h.in 

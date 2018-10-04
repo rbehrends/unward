@@ -1,8 +1,7 @@
 # vim:set ft=tcl:
 
-global progname builddir bindir
+global builddir bindir
 
-set progname "main"
 set builddir "build"
 set bindir "bin"
 
@@ -93,31 +92,6 @@ proc fmt-files {files} {
   }
   return $output
 }
-
-proc find-main {} {
-  global progname
-  set tmp [string trim [readfile src/progname.txt ""]]
-  if {[regexp {^[-a-zA-Z0-9]+$} $tmp]} {
-    set progname $tmp
-    return
-  }
-  set files [glob src/*.cc]
-  if {[llength $files] == 1} {
-    set progname [localname [lindex $files 0]]
-  }
-  foreach file $files {
-    if {[regexp {^test.} $file]} {
-      continue
-    }
-    set data [readfile $file ""]
-    if {[regexp {\<void\s+Main\>} $data]} {
-      set progname [localname $file]
-      return
-    }
-  }
-}
-
-find-main
 
 global inttypes csize iquote
 set inttypes {char short int long}
@@ -350,7 +324,6 @@ define LIBOBJ [fmt-files $libobj]
 define PROGSRC [fmt-files $progsrc]
 define PROGOBJ [fmt-files $progobj]
 define PROGHDR [fmt-files $proghdr]
-define PROGNAME $progname
 define TESTOBJ [fmt-files $testobj]
 define GENSRC [fmt-files $gensrc]
 
@@ -364,7 +337,6 @@ foreach file $testsrc {
 }
 
 define TESTS [fmt-files $tests]
-define TARGETS [fmt-files $targets]
 
 foreach file $progsrc {
   make-prog-rule $file
