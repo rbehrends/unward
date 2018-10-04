@@ -18,14 +18,16 @@ void InitSystem();
 extern Initializer *initializers;
 
 #define INIT(name, code) \
-  struct _Init_##name : public Initializer { \
-    _Init_##name() \
-        : Initializer() { \
-      next = initializers; \
-      initializers = this; \
+  namespace AdLib { namespace Init { \
+    struct InitSection_##name : public Initializer { \
+      InitSection_##name() \
+          : Initializer() { \
+        next = initializers; \
+        initializers = this; \
+      } \
+      virtual void init(); \
+    } init_section_##name; \
+    void InitSection_##name::init() { \
+      code \
     } \
-    virtual void init(); \
-  } _init_##name; \
-  void _Init_##name::init() { \
-    code \
-  }
+  } }
