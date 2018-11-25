@@ -120,6 +120,14 @@ void Main() {
   }
   // Step 1: Find all static inline functions
   FuncList *funcs = FindInlineFunctions(InputSources);
+  StrSet *unsafe_names = new StrSet();
+  for (Int i = 0; i < funcs->len(); i++) {
+    Str *name = funcs->at(i)->name;
+    if (name->starts_with("UNSAFE_") || name->starts_with("Unsafe")) {
+      unsafe_names->add(name);
+      unsafe_names->add(SafeName(name));
+    }
+  }
   // Step 2: Find out which of those call other functions
   FindCalls(funcs);
   // Step 3: Use the call graph to figure out which functions
@@ -149,6 +157,8 @@ void Main() {
   SourceList *unsafe_sources = UpdateUnsafeSections(unprotected,
     used_funcnames);
   StrSet *dont_rewrite = new StrSet(ROOT_FUNCS);
+  // do not generate code for already existing unsafe functions
+  dont_rewrite->union_in_place(unsafe_names);
   SourceList *unsafe_sources2 = GenUnsafeCode(funcs, used_funcnames,
     dont_rewrite);
   // Step 9: Write files to disk

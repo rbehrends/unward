@@ -30,8 +30,31 @@ Str *UnsafeName(Str *name) {
         break;
       }
     }
-    result = S(unsafe_prefix)->add(name);
+    if (name->starts_with(unsafe_prefix)) {
+      result = name->clone();
+      name = result;
+    } else {
+      result = S(unsafe_prefix)->add(name);
+    }
     unsafe_names->add(name, result);
+  }
+  return result;
+}
+
+Str *SafeName(Str *name) {
+  static Dict *safe_names;
+  if (!safe_names) {
+    GCVar(safe_names, new Dict());
+  }
+  Str *result;
+  if (!safe_names->find(name, result)) {
+    const char *start = &name->at(0);
+    if (name->starts_with("Unsafe"))
+      start = &name->at(6);
+    else if (name->starts_with("UNSAFE_"))
+      start = &name->at(7);
+    result = new Str(start);
+    safe_names->add(name, result);
   }
   return result;
 }
@@ -79,17 +102,14 @@ void GenUnsafeCode(FuncSpec *func, StrSet *filter) {
   func->unsafe_code = unsafe_code;
 }
 
-SourceList *GenUnsafeCode(FuncList *funcs, StrSet *filter,
-    StrSet *dont_rewrite) {
+SourceList *GenUnsafeCode(FuncList *funcs, StrSet *used, StrSet *skip) {
   SourceList *result = new SourceList();
   funcs = funcs->sort(CmpFuncSpec);
   for (Int i = 0; i < funcs->len(); i++) {
     FuncSpec *func = funcs->at(i);
-    if (dont_rewrite->contains(func->name))
+    if (!used->contains(func->name) || skip->contains(func->name))
       continue;
-    if (!filter->contains(func->name))
-      continue;
-    GenUnsafeCode(func, filter);
+    GenUnsafeCode(func, used);
     if (!func->source->rewritten_funcs) {
       func->source->rewritten_funcs = new FuncList();
       result->add(func->source);

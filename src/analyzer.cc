@@ -298,4 +298,3 @@ StrSet *FindCalls(FuncMap *funcmap, SectionList *sections) {
   }
   return result;
 }
-
