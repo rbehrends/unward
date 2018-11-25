@@ -2,6 +2,10 @@
 
 #include "lib.h"
 
+// Note: this is not an enum. A low bit of 0 indicates a value of either
+// SLOT_EMPTY or SLOT_OCCUPIED. A low bit of 1 (== SLOT_OCCUPIED)
+// indicates that the top bits contain an abbreviated hash value.
+
 #define SLOT_EMPTY 0
 #define SLOT_OCCUPIED 1
 #define SLOT_DELETED 2
@@ -18,6 +22,11 @@ private:
   CmpFunc(T, _cmp);
   HashFunc(T, _hash);
   T *_data;
+  // The _state array contains either SLOT_EMPTY, SLOT_DELETED or
+  // an abbreviated hash value with the lowest bit (SLOT_OCCUPIED)
+  // set. Rather than storing the entire hash value, we only store
+  // 7 bits of it, expecting this to still eliminate 99% of calls
+  // to the compare function.
   Byte *_state;
   void resize(Int newsize) {
     _data = (T *) GC_MALLOC(newsize * sizeof(T));
@@ -27,8 +36,8 @@ private:
   }
   void uncheckedAdd(T item, bool replace = false);
   void rebuild();
-  Word next(Word hash) {
-    return hash * 5 + 1;
+  Word next(Word pos, Word hash) {
+    return (pos - hash) * 5 + 1 + hash;
   }
 
 public:
@@ -37,7 +46,7 @@ public:
     Set *_set;
     Int _i;
     void skip() {
-      while (_i < _set->_size && _set->_state[_i] != SLOT_OCCUPIED)
+      while (_i < _set->_size && (_set->_state[_i] & SLOT_OCCUPIED) == 0)
         _i++;
     }
 
@@ -118,7 +127,7 @@ void Set<T>::rebuild() {
   _deleted = 0;
   resize(newsize);
   for (Int i = 0; i < size; i++) {
-    if (state[i] == SLOT_OCCUPIED)
+    if ((state[i] & SLOT_OCCUPIED) != 0)
       uncheckedAdd(data[i]);
   }
 }
@@ -178,20 +187,32 @@ Set<T>::Set(Arr<T> *arr, CmpFunc(T, cmp), HashFunc(T, hash)) {
   add(arr);
 }
 
+#define INIT_HASH_LOOP(item) \
+  Word mask = _size - 1; \
+  Word hash = _hash(item); \
+  Word pos = hash & mask; \
+  Byte occ = FibHash(hash, 8) | SLOT_OCCUPIED
+
 template <typename T>
 void Set<T>::uncheckedAdd(T item, bool replace) {
-  Word mask = _size - 1;
-  Word hash = _hash(item) & mask;
-  while (_state[hash] == SLOT_OCCUPIED) {
-    if (_cmp(_data[hash], item) == 0) {
+  INIT_HASH_LOOP(item);
+  Int freepos = -1;
+  while (_state[pos] != SLOT_EMPTY) {
+    if (_state[pos] == occ && _cmp(_data[pos], item) == 0) {
       if (replace)
-        _data[hash] = item;
+        _data[pos] = item;
       return;
     }
-    hash = next(hash) & mask;
+    if (_state[pos] == SLOT_DELETED && freepos < 0)
+      freepos = pos;
+    pos = next(pos, hash) & mask;
   }
-  _data[hash] = item;
-  _state[hash] = SLOT_OCCUPIED;
+  if (freepos >= 0) {
+    _deleted--;
+    pos = freepos;
+  }
+  _data[pos] = item;
+  _state[pos] = occ;
   _count++;
 }
 
@@ -199,16 +220,18 @@ template <typename T>
 T Set<T>::get_or_add(T item) {
   if ((_count + _deleted) * 3 / 2 >= _size)
     rebuild();
-  Word mask = _size - 1;
-  Word hash = _hash(item) & mask;
-  while (_state[hash] == SLOT_OCCUPIED) {
-    if (_cmp(_data[hash], item) == 0) {
-      return _data[hash];
+  INIT_HASH_LOOP(item);
+  while (_state[pos] != SLOT_EMPTY) {
+    if (_state[pos] == occ && _cmp(_data[pos], item) == 0) {
+      return _data[pos];
     }
-    hash = next(hash) & mask;
+    pos = next(pos, hash) & mask;
   }
-  _data[hash] = item;
-  _state[hash] = SLOT_OCCUPIED;
+  if (_state[pos] == SLOT_DELETED) {
+    _deleted--;
+  }
+  _data[pos] = item;
+  _state[pos] = occ;
   _count++;
   return item;
 }
@@ -232,31 +255,29 @@ Set<T> *Set<T>::add(Arr<T> *arr, bool replace) {
 
 template <typename T>
 bool Set<T>::remove(T item) {
-  Word mask = _size - 1;
-  Word hash = _hash(item) & mask;
-  while (_state[hash] != SLOT_EMPTY) {
-    if (_state[hash] == SLOT_OCCUPIED && _cmp(_data[hash], item) == 0) {
-      memset(_data + hash, 0, sizeof(T));
-      _state[hash] = SLOT_DELETED;
+  INIT_HASH_LOOP(item);
+  while (_state[pos] != SLOT_EMPTY) {
+    if (_state[pos] == occ && _cmp(_data[pos], item) == 0) {
+      memset(_data + pos, 0, sizeof(T));
+      _state[pos] = SLOT_DELETED;
       _count--;
       _deleted++;
       if ((_count + _deleted) * 3 / 2 > _size || _deleted >= _count)
         rebuild();
       return 1;
     }
-    hash = next(hash) & mask;
+    pos = next(pos, hash) & mask;
   }
   return 0;
 }
 
 template <typename T>
 T *Set<T>::find(T item) {
-  Word mask = _size - 1;
-  Word hash = _hash(item) & mask;
-  while (_state[hash] != SLOT_EMPTY) {
-    if (_state[hash] == SLOT_OCCUPIED && _cmp(_data[hash], item) == 0)
-      return _data + hash;
-    hash = next(hash) & mask;
+  INIT_HASH_LOOP(item);
+  while (_state[pos] != SLOT_EMPTY) {
+    if (_state[pos] == occ && _cmp(_data[pos], item) == 0)
+      return _data + pos;
+    pos = next(pos, hash) & mask;
   }
   return NULL;
 }
@@ -270,7 +291,7 @@ template <typename T>
 Arr<T> *Set<T>::items() {
   Arr<T> *result = new Arr<T>(_count);
   for (Int i = 0; i < _size; i++) {
-    if (_state[i] == SLOT_OCCUPIED)
+    if (_state[i] & SLOT_OCCUPIED)
       result->add(_data[i]);
   }
   return result;
@@ -377,3 +398,5 @@ static inline Str *S(StrSet *set, const char *sep = " ") {
 #undef SLOT_EMPTY
 #undef SLOT_OCCUPIED
 #undef SLOT_DELETED
+
+#undef INIT_HASH_LOOP

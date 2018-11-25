@@ -2,6 +2,10 @@
 
 #include "lib.h"
 
+// Note: this is not an enum. A low bit of 0 indicates a value of either
+// SLOT_EMPTY or SLOT_OCCUPIED. A low bit of 1 (== SLOT_OCCUPIED)
+// indicates that the top bits contain an abbreviated hash value.
+
 #define SLOT_EMPTY 0
 #define SLOT_OCCUPIED 1
 #define SLOT_DELETED 2
@@ -25,6 +29,11 @@ private:
   HashFunc(K, _hash);
   K *_keys;
   V *_values;
+  // The _state array contains either SLOT_EMPTY, SLOT_DELETED or
+  // an abbreviated hash value with the lowest bit (SLOT_OCCUPIED)
+  // set. Rather than storing the entire hash value, we only store
+  // 7 bits of it, expecting this to still eliminate 99% of calls
+  // to the compare function.
   Byte *_state;
   void resize(Int newsize) {
     _keys = (K *) GC_MALLOC(newsize * sizeof(K));
@@ -35,8 +44,8 @@ private:
   }
   void uncheckedAdd(K key, V value, bool replace = false);
   void rebuild();
-  Word next(Word hash) {
-    return hash * 5 + 1;
+  Word next(Word pos, Word hash) {
+    return (pos - hash) * 5 + 1 + hash;
   }
 
 public:
@@ -45,7 +54,7 @@ public:
     Map *_map;
     Int _i;
     void skip() {
-      while (_i < _map->_size && _map->_state[_i] != SLOT_OCCUPIED)
+      while (_i < _map->_size && (_map->_state[_i] & SLOT_OCCUPIED) == 0)
         _i++;
     }
 
@@ -138,7 +147,7 @@ void Map<K, V>::rebuild() {
   _deleted = 0;
   resize(newsize);
   for (Int i = 0; i < size; i++) {
-    if (state[i] == SLOT_OCCUPIED)
+    if (state[i] & SLOT_OCCUPIED)
       uncheckedAdd(keys[i], values[i]);
   }
 }
@@ -200,23 +209,35 @@ Map<K, V>::Map(Map<K, V> *map, bool copy) {
   }
 }
 
+#define INIT_HASH_LOOP(key) \
+  Word mask = _size - 1; \
+  Word hash = _hash(key); \
+  Word pos = hash & mask; \
+  Byte occ = FibHash(hash, 8) | SLOT_OCCUPIED
+
 template <typename K, typename V>
 void Map<K, V>::uncheckedAdd(K key, V value, bool replace) {
-  Word mask = _size - 1;
-  Word hash = _hash(key) & mask;
-  while (_state[hash] == SLOT_OCCUPIED) {
-    if (_cmp(_keys[hash], key) == 0) {
+  INIT_HASH_LOOP(key);
+  Int freepos = -1;
+  while (_state[pos] != SLOT_EMPTY) {
+    if (_state[pos] == occ && _cmp(_keys[pos], key) == 0) {
       if (replace) {
-        _keys[hash] = key;
-        _values[hash] = value;
+        _keys[pos] = key;
+        _values[pos] = value;
       }
       return;
     }
-    hash = next(hash) & mask;
+    if (_state[pos] == SLOT_DELETED && freepos < 0)
+      freepos = pos;
+    pos = next(pos, hash) & mask;
   }
-  _keys[hash] = key;
-  _values[hash] = value;
-  _state[hash] = SLOT_OCCUPIED;
+  if (freepos >= 0) {
+    _deleted--;
+    pos = freepos;
+  }
+  _keys[pos] = key;
+  _values[pos] = value;
+  _state[pos] = occ;
   _count++;
 }
 
@@ -246,34 +267,32 @@ Map<K, V> *Map<K, V>::add(Arr<K> *keys, Arr<V> *values, bool replace) {
 
 template <typename K, typename V>
 bool Map<K, V>::remove(K key) {
-  Word mask = _size - 1;
-  Word hash = _hash(key) & mask;
-  while (_state[hash] != SLOT_EMPTY) {
-    if (_state[hash] == SLOT_OCCUPIED && _cmp(_keys[hash], key) == 0) {
-      memset(_keys + hash, 0, sizeof(K));
-      memset(_values + hash, 0, sizeof(V));
-      _state[hash] = SLOT_DELETED;
+  INIT_HASH_LOOP(key);
+  while (_state[pos] != SLOT_EMPTY) {
+    if (_state[pos] == occ && _cmp(_keys[pos], key) == 0) {
+      memset(_keys + pos, 0, sizeof(K));
+      memset(_values + pos, 0, sizeof(V));
+      _state[pos] = SLOT_DELETED;
       _count--;
       _deleted++;
       if ((_count + _deleted) * 3 / 2 > _size || _deleted >= _count)
         rebuild();
       return 1;
     }
-    hash = next(hash) & mask;
+    pos = next(pos, hash) & mask;
   }
   return 0;
 }
 
 template <typename K, typename V>
 bool Map<K, V>::find(K key, V &value) {
-  Word mask = _size - 1;
-  Word hash = _hash(key) & mask;
-  while (_state[hash] != SLOT_EMPTY) {
-    if (_state[hash] == SLOT_OCCUPIED && _cmp(_keys[hash], key) == 0) {
-      value = _values[hash];
+  INIT_HASH_LOOP(key);
+  while (_state[pos] != SLOT_EMPTY) {
+    if (_state[pos] == occ && _cmp(_keys[pos], key) == 0) {
+      value = _values[pos];
       return true;
     }
-    hash = next(hash) & mask;
+    pos = next(pos, hash) & mask;
   }
   return false;
 }
@@ -450,3 +469,5 @@ typedef Map<Str *, Str *> Dict;
 #undef SLOT_EMPTY
 #undef SLOT_OCCUPIED
 #undef SLOT_DELETED
+
+#undef INIT_HASH_LOOP
