@@ -286,7 +286,7 @@ set libsrc {}
 set libobj {}
 set adlibsrc [glob adlib/*.cc]
 if {!$boehm} {
-  lappend adlibsrc "gclib/tinygc.c"
+  lappend adlibsrc "gclib/gc.c"
 }
 
 foreach file $adlibsrc {
