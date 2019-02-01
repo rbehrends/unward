@@ -1,5 +1,4 @@
 #include "lib.h"
-#include <algorithm>
 
 Str *Str::chomp() {
   if (_len > 0 && _data[_len - 1] == '\n')
@@ -11,6 +10,8 @@ Str *Str::chomp() {
 }
 
 StrArr *Str::split(const char *s, Int n) {
+  if (n == 1)
+    return split(s[0]);
   Arr<Int> *parts = new Arr<Int>();
   parts->add(-n);
   for (Int i = 0; i < _len - n; i++) {
@@ -96,10 +97,15 @@ StrArr *Str::splitLines() {
 Str *StrJoin(StrArr *arr, const char *sep, Int n) {
   if (arr->len() == 0)
     return new Str();
-  Str *result = new Str(arr->len() * (n + 1));
+  Int len = (arr->len() - 1) * n;
+  for (Int i = 0; i < arr->len(); i++) {
+    len += arr->at(i)->len();
+  }
+  Str *result = new Str(len);
   result->add(arr->first());
   for (Int i = 1; i < arr->len(); i++) {
-    result->add(sep, n);
+    if (n >= 0)
+      result->add(sep, n);
     result->add(arr->at(i));
   }
   return result;
@@ -192,17 +198,44 @@ Int Str::find(char ch, Int from) {
 }
 
 Int Str::find(const char *s, Int n, Int from) {
-  require(n > 0, "empty string");
+  const int mult_base = 3;
+  require(n >= 0, "negative length");
   require(from < _len, "index out of range");
+  if (n == 0)
+    return from;
   if (n > _len)
     return NOWHERE;
-  Int end = _len - n + 1;
-  char ch = s[0];
-  for (Int i = from; i < end; i++) {
-    if (_data[i] == ch) {
+  if (n == 1)
+    return find(s[0], from);
+  if (n <= 4) {
+    Int end = _len - n + 1;
+    char ch = s[0];
+    for (Int i = from; i < end; i++) {
       if (memcmp(_data + i, s, n) == 0)
         return i;
     }
+    return NOWHERE;
+  }
+  // Rabin-Karp search with a simple hash function
+  Word32 hash = (Byte) s[0];
+  Word32 rollhash = 0;
+  Word32 hashmul = 1;
+  // rollhash only hashes the first n-1 characters; it will
+  // be updated in the search loop
+  for (Int i = 1; i < n; i++) {
+    hash = hash * mult_base + (Byte) s[i];
+    rollhash = rollhash * mult_base + (Byte) _data[from+i-1];
+    hashmul *= mult_base;
+  }
+  Int end = _len - n + 1;
+  char ch = s[0];
+  for (Int i = from; i < end; i++) {
+    rollhash = rollhash * mult_base + (Byte) _data[i+n-1];
+    if (hash == rollhash) {
+      if (memcmp(_data + i, s, n) == 0)
+        return i;
+    }
+    rollhash -= hashmul * (Byte) _data[i];
   }
   return NOWHERE;
 }
@@ -224,16 +257,18 @@ Int Str::rfind(char ch) {
 }
 
 Int Str::rfind(const char *s, Int n) {
-  require(n > 0, "empty string");
-  if (n > _len)
+  require(n >= 0, "empty string");
+  if (n == 0)
+    return _len;
+  if (n == 1)
+    return rfind(s[0]);
+  if (n >_len)
     return NOWHERE;
   Int end = _len - n;
   char ch = s[0];
   for (Int i = end - 1; i >= 0; i--) {
-    if (_data[i] == ch) {
-      if (memcmp(_data + i, s, n) == 0)
-        return i;
-    }
+    if (memcmp(_data + i, s, n) == 0)
+      return i;
   }
   return NOWHERE;
 }
@@ -244,6 +279,27 @@ Int Str::rfind(const char *s) {
 
 Int Str::rfind(Str *str) {
   return rfind(str->_data, str->_len);
+}
+
+Str *Str::replace_count(Int n, Str *pattern, Str *replacement) {
+  require(pattern->len() > 0, "pattern must be non-empty");
+  Str *result = new Str();
+  Int from = 0;
+  for (;;) {
+    if (n-- <= 0) {
+      result->add(_data + from, _len - from);
+      break;
+    }
+    Int pos = find(pattern, from);
+    if (pos < 0) {
+      result->add(_data + from, _len - from);
+      break;
+    }
+    result->add(_data + from, pos - from);
+    result->add(replacement);
+    from = pos + pattern->len();
+  }
+  return result;
 }
 
 Str *ToStr(Int x) {

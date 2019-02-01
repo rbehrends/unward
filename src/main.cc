@@ -20,13 +20,13 @@ void Error(Str *s) {
 struct AbsPath : public GC {
   Str *_pwd;
   AbsPath() {
-    _pwd = Pwd();
+    _pwd = CurrentDir();
   }
   Str *operator()(Str *path) {
     if (path->starts_with("/"))
       return path;
     else
-      return _pwd->clone()->add("/")->add(path);
+      return AbsolutePath(path);
   }
 };
 

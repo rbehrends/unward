@@ -12,6 +12,9 @@ void ContractFailure(ContractType type, const char *message) {
   case Invariant:
     error = S("invariant failed: ");
     break;
+  case Assertion:
+    error = S("assrtion failed: ");
+    break;
   }
   error->add(S(message));
   ContractException *e = new ContractException();

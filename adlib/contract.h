@@ -4,6 +4,7 @@ enum ContractType {
   Precondition,
   Postcondition,
   Invariant,
+  Assertion,
 };
 
 void ContractFailure(ContractType type, const char *message);
@@ -30,6 +31,11 @@ static inline void invariant(bool cond, const char *message) {
   if (!cond)
     ContractFailure(Invariant, message);
 }
+
+static inline void assert(bool cond, const char *message) {
+  if (!cond)
+    ContractFailure(Assertion, message);
+}
 #else
 static inline void require(bool cond, const char *message) {
 }
@@ -38,5 +44,8 @@ static inline void ensure(bool cond, const char *message) {
 }
 
 static inline void invariant(bool cond, const char *message) {
+}
+
+static inline void assert(bool cond, const char *message) {
 }
 #endif

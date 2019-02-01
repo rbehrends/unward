@@ -123,6 +123,10 @@ public:
   Int rfind(char ch);
   Int rfind(const char *s);
   Int rfind(const char *s, Int n);
+  Str *replace_count(Int n, Str *pattern, Str *replacement);
+  Str *replace_all(Str *pattern, Str *replacement) {
+    return replace_count(_len, pattern, replacement);
+  }
   StrArr *split(Str *sep);
   StrArr *split(char ch);
   StrArr *split(const char *s);

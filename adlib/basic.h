@@ -32,3 +32,22 @@ static inline T Max(T a, T b) {
 
 int Cmp(Int a, Int b);
 int Cmp(Word a, Word b);
+
+template <typename R, typename A, typename C>
+class Lambda {
+  R (*fn)(A, C);
+  C context;
+public:
+  Lambda(R (*fn)(A, C), C context) {
+    this->fn = fn;
+    this->context = context;
+  }
+  R operator()(A arg) {
+    return fn(arg, context);
+  }
+};
+
+template <typename R, typename A, typename C>
+static inline Lambda<R, A, C> F(R(*fn)(A, C), C context) {
+  return Lambda<R, A, C>(fn, context);
+}

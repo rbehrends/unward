@@ -31,7 +31,7 @@ enum ListFilesMode {
   ListFilesRelative = 2,
 };
 
-Str *Pwd();
+Str *CurrentDir();
 bool ChDir(Str *path);
 bool ChDir(const char *path);
 StrArr *ListFiles(const char *path);
@@ -57,7 +57,6 @@ struct FileInfo : PtrFreeGC {
 
 static const char *PathSeparator = "/";
 
-FileInfo *FileStat(Str *path);
 bool FileStat(FileInfo &info, const char *path, bool follow_links = false);
 bool FileStat(FileInfo &info, Str *path, bool follow_links = false);
 FileInfo *FileStat(const char *path, bool follow_links = false);
@@ -65,6 +64,13 @@ FileInfo *FileStat(Str *path, bool follow_links = false);
 Str *DirName(Str *path);
 Str *BaseName(Str *path);
 Str *FileExtension(Str *path);
+Str *AbsolutePath(Str *path);
+Str *NormalizePath(Str *path);
+Str *GetEnv(Str *name);
+Str *GetEnv(const char *name);
+
+Str *ProgramPath();
+
 bool MakeDir(Str *path, bool recursive = false);
 bool MakeDir(const char *path, bool recursive = false);
 bool RemoveDir(Str *path);

@@ -7,14 +7,17 @@
 #endif
 
 Str *ReadFile(FILE *fp) {
+  char buffer[65536];
   if (fp == NULL)
     return NULL;
-  int ch;
-  Str *result = new Str(1024);
-  while ((ch = getc(fp)) != EOF) {
-    result->add(ch);
+  StrArr *result = new StrArr();
+  for (;;) {
+    size_t nbytes = fread(buffer, 1, sizeof(buffer), fp);
+    if (nbytes == 0)
+      break;
+    result->add(new Str(buffer, nbytes));
   }
-  return result;
+  return StrJoin(result, "");
 }
 
 Str *ReadFile(const char *filename) {
@@ -116,7 +119,8 @@ Str *ReadProcess(Str *prog, StrArr *args) {
   if (!pipe)
     return NULL;
   Str *result = ReadFile(pipe);
-  pclose(pipe);
+  if (pclose(pipe))
+    return NULL;
   return result;
 }
 
@@ -131,7 +135,8 @@ int WriteProcess(Str *prog, StrArr *args, Str *data) {
   if (!pipe)
     return 0;
   int success = WriteFile(pipe, data);
-  pclose(pipe);
+  if (pclose(pipe))
+    return 0;
   return success;
 }
 
@@ -191,7 +196,7 @@ void PrintErrLn(Int i) {
   fprintf(stderr, "%" WORD_FMT "d\n", i);
 }
 
-Str *Pwd() {
+Str *CurrentDir() {
 #ifdef PATH_MAX
   char *path = getcwd(NULL, PATH_MAX);
 #else
@@ -381,6 +386,73 @@ static bool MakeDirRec(Str *path) {
     return false;
   }
   return true;
+}
+
+Str *AbsolutePath(Str *path) {
+  if (path->starts_with(PathSeparator)) {
+    return path->clone();
+  }
+  Str *result = CurrentDir();
+  return result->add(PathSeparator)->add(path);
+}
+
+Str *NormalizePath(Str *path) {
+  bool abs = path->starts_with(PathSeparator);
+  StrArr *parts = path->split(PathSeparator);
+  StrArr *result = new StrArr();
+  for (Int i = 0; i < parts->len(); i++) {
+    Str *part = parts->at(i);
+    if (part->eq("") || part->eq(".")) {
+      // do nothing
+    } else if (part->eq("..")) {
+      if (result->len() > 0)
+        result->pop();
+      else if (!abs)
+        result->add(part);
+    } else {
+      result->add(part);
+    }
+  }
+  if (abs)
+    return S(PathSeparator)->add(StrJoin(result, PathSeparator));
+  else
+    return StrJoin(result, PathSeparator);
+}
+
+Str *GetEnv(const char *name) {
+  char *result = getenv(name);
+  if (result)
+    return new Str(result);
+  else
+    return NULL;
+}
+
+Str *GetEnv(Str *name) {
+  return GetEnv(name->c_str());
+}
+
+Str *ProgramPath() {
+  Str *arg0 = new Str(ArgV[0]);
+  Str *result = arg0;
+  if (arg0) {
+    if (FileStat(result, true)) {
+      return NormalizePath(AbsolutePath(result));
+    }
+    if (!arg0->starts_with(PathSeparator)) {
+      Str *path = GetEnv("PATH");
+      StrArr *paths = path ? path->split(':') : A();
+      for (Int i = 0; i < paths->len(); i++) {
+        Str *p = paths->at(i)->clone();
+        p->add(PathSeparator);
+        p->add(arg0);
+        if (FileStat(p, true)) {
+          result = p;
+          break;
+        }
+      }
+    }
+  }
+  return result ? NormalizePath(AbsolutePath(result)) : result;
 }
 
 bool MakeDir(const char *path, bool recursive) {

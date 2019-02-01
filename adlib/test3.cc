@@ -64,8 +64,18 @@ void Main() {
   Check(arr1->eq(arr2), "array ranges");
   Str *str = S("alphalpha");
   Check(str->substr(0, 5)->eq(str->substr(4, 5)), "substrings");
-  Check(str->find('a', 1) == 4 && str->find("alp", 1) == 4, "string search");
+  Check(str->find('a', 1) == 4 && str->find("alp", 1) == 4
+          && str->find("alpha", 1) == 4 && str->find("alphx") < 0,
+      "string search");
   Check(str->rfind('l') == 5 && str->rfind("alp") == 4
           && str->find("alx") == NOWHERE,
       "reverse string search");
+  str = S("\x80 \x81 \xff abc");
+  Check(str->find(" \x81 ") == 1 && str->find("\x81 ") == 2
+          && str->find("\xff abc") == 4 && str->find("\xff abd") < 0,
+      "string search (signed char)");
+  Check(S("here%sthere%sbe%sdragons")->replace_all(S("%s"), S(" "))
+    ->eq("here there be dragons") &&
+    S("axbxc")->replace_count(1, S("x"), S("y"))->eq("aybxc"),
+      "string replacement");
 }

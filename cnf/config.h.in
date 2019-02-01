@@ -20,6 +20,10 @@ typedef @LongInt@ LongInt;
 typedef @Offset@ Offset;
 @endif
 
+#ifdef HAVE_DIRENT_H
+#define HAVE_DIR_SUPPORT
+#endif
+
 #define LONG_FMT "@LONG_FMT@"
 #define WORD_FMT "@WORD_FMT@"
 

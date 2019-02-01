@@ -34,6 +34,10 @@ Str *join(Str *acc, Str *value) {
   return acc;
 }
 
+bool ends_with(Str *a, Str *b) {
+  return a->ends_with(b);
+}
+
 void Main() {
   StrArr *arr = new StrArr();
   Str *collect = new Str();
@@ -116,4 +120,7 @@ void Main() {
   Str *a = uniq->get_or_add(S("alpha"));
   Str *b = uniq->get_or_add(S("alpha"));
   Check(a == b, "string interning");
+  StrArr *files = A("alpha.c", "alpha.h", "beta.c", "beta.h");
+  StrArr *headers = files->filter(F(ends_with, S(".h")));
+  Check(headers->len() == 2, "lambda filters");
 }

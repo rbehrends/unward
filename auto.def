@@ -35,7 +35,7 @@ if {[opt-bool adlibdev]} {
   define DEFAULT_TARGET "\$(TARGETS)"
   define DEBUG 1
 } else {
-  define DEFAULT_TARGET "\$(PROG)"
+  define DEFAULT_TARGET "prog"
   define DEBUG 0
 }
 
@@ -126,7 +126,7 @@ proc check-tmp-flags {flags} {
   }
 }
 
-cc-check-tools ar ranlib
+cc-check-tools ar
 if {[opt-bool without-re2c]} {
   set re2c 0
 } else {
@@ -322,6 +322,7 @@ set libhdr "[glob adlib/*.h] [glob gclib/*.h] adlib/config.h"
 set libhdr [lsort -unique $libhdr]
 set progre [glob -nocomplain src/*.re]
 set proghdr [glob -nocomplain src/*.h]
+set testsrc [lsort -unique $testsrc]
 set gensrc {}
 foreach file $progre {
   lappend progsrc "[file rootname $file].cc"
@@ -372,7 +373,7 @@ foreach file $testsrc {
   make-prog-rule $file
 }
 
-append rules [readfile $makeextra]
+define EXTRA [readfile $makeextra]
 
 define RULES $rules
 define LIBS [join $libs]
