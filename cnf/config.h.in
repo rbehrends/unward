@@ -2,6 +2,8 @@
 
 #include "config-defs.h"
 
+#define ADLIB_DEBUG @DEBUG@
+
 typedef @Word@ Word;
 typedef @Word8@ Word8;
 typedef @Word16@ Word16;

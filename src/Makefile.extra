@@ -1,9 +1,0 @@
-PROGNAME=unward
-TCLSH=`autosetup/autosetup-find-tclsh`
-PREPROC_TCL=$(TCLSH) src/script/preproc.tcl
-src/lexer.h: src/lexer.h.in 
-	$(PREPROC_TCL) src/lexer.h.in
-src/lexer.re: src/lexer.re.in 
-	$(PREPROC_TCL) src/lexer.re.in
-CONFIGITEMS += src/lexer.h src/lexer.re
-RE2CFLAGS= --no-generation-date --no-version

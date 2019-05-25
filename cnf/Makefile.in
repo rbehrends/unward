@@ -2,27 +2,18 @@
 
 BUILDDIR=@BUILDDIR@
 BINDIR=@BINDIR@
-TESTOBJ=@TESTOBJ@
-LIBSRC=@LIBSRC@
-LIBOBJ=@LIBOBJ@
-LIBHDR=@LIBHDR@
-PROGSRC=@PROGSRC@
-PROGOBJ=@PROGOBJ@
-PROGHDR=@PROGHDR@
-GENSRC=@GENSRC@
 TESTS=@TESTS@
-TARGETS=$(PROG) $(TESTS)
+PROGS=@PROGS@
+TARGETS=$(PROGS) $(TESTS)
 CONFIGITEMS=@CONFIGITEMS@
-ADLIB=$(BUILDDIR)/adlib.a
 LIBS=@LIBS@
 INCLUDES=@INCLUDES@
+GENERATED=@GENERATED@
 CC=@CC@
 CXX=@CXX@
 OPT=@OPT@
-DEBUG=@DEBUG@
-DEFINES=-DADLIB_DEBUG=$(DEBUG)
-CFLAGS=$(OPT) $(DEFINES) @CFLAGS@
-CXXFLAGS=$(OPT) $(DEFINES) @CFLAGS@
+CFLAGS=$(OPT) @CFLAGS@
+CXXFLAGS=$(OPT) @CXXFLAGS@
 LDFLAGS=
 MKDIR=@mkdir -p
 RM=rm
@@ -30,60 +21,39 @@ RE2C=@RE2C@
 GCFLAGS=-DGC_FASTCALL= -DGC_CLIBDECL= -DGC_GETENV_SKIP
 DEFAULT_TARGET=@DEFAULT_TARGET@
 
-all: $(DEFAULT_TARGET) .FORCE
+all: $(DEFAULT_TARGET) .FORCE .QUIET
 
 @EXTRA@
 
-PROGNAME?=main
 RE2CFLAGS?=@RE2CFLAGS@
-PROG=$(BINDIR)/$(PROGNAME)
 
-debug: .FORCE
+debug: .FORCE .QUIET
 	$(MAKE) DEBUG=1
-prog: $(PROG) .FORCE
-source: $(GENSRC) .FORCE
+prog: $(PROGS) .FORCE .QUIET
 
-$(PROG): $(PROGOBJ) $(ADLIB)
-	$(MKDIR) $(BINDIR)
-	$(CXX) $(CXXFLAGS) -o $(PROG) $(PROGOBJ) $(ADLIB) $(LIBS)
-
-$(ADLIB): $(LIBOBJ)
-	$(RM) -f $(ADLIB)
-	@AR@ rsc $(ADLIB) $(LIBOBJ)
-test: $(TESTS) .FORCE
+test: $(TESTS) .FORCE .QUIET
 	@for test in @TESTS@; do \
 	  echo === $$test ===; \
 	  $$test; \
 	done
-tests: $(TESTS) .FORCE
-build.sh: .FORCE
-	# GNU Make only rule
-	@echo Generating $@ ...
-	@cat cnf/build-preamble.sh >$@
-	@$(MAKE) -nB CC=cc CXX=cxx prog \
-		| egrep ^mkdir | sort -u >>$@
-	@$(MAKE) -nB CC=cc CXX=cxx prog \
-		| egrep -v '^(mkdir|re2c)' >>$@
-	@echo finish >>$@
-	@chmod 755 $@
-tar: build.sh .FORCE
-	ln -s . $(PROGNAME)
-	tar czf $(PROGNAME).tar.gz $(PROGNAME)/{build.sh,adlib,src,gclib,cnf/*.*}
-	$(RM) -f $(PROGNAME)
-reformat: .FORCE
+tests: $(TESTS) .FORCE .QUIET
+reformat: .FORCE .QUIET
 	clang-format -style=file -i `find adlib src -name '*.cc' -o -name '*.h'`
-config: .FORCE
+config deps: .FORCE .QUIET
 	./configure @CONFIG_ARGS@
-clean: .FORCE
-	$(RM) -f $(LIBOBJ) $(PROGOBJ) $(TESTOBJ) $(ADLIB)
-cleanall: clean .FORCE
-	$(RM) -f $(TARGETS)
-distclean: cleanall .FORCE
+clean: .FORCE .QUIET
+	$(RM) -rf $(BUILDDIR)
+cleanall: clean .FORCE .QUIET
+	$(RM) -f $(PROGS) $(GENERATED)
+distclean: cleanall .FORCE .QUIET
 	$(RM) -f $(CONFIGITEMS)
-scrub: distclean .FORCE
+scrub: distclean .FORCE .QUIET
 	$(RM) -f $(GENSRC) Makefile autosetup/jimsh0
 	$(RM) -rf $(BUILDDIR)
 .FORCE:
-.PHONY: test tests all debug prog source tar debug \
-	config clean cleanall distclean scrub reformat
+.QUIET:
+	@:
+.PHONY: test tests all debug prog debug config deps \
+	clean cleanall distclean scrub reformat \
+	.QUIET .FORCE
 @RULES@
