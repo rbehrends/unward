@@ -5,18 +5,22 @@ char **ArgV;
 Str *ProgName;
 StrArr *Args;
 
-Initializer *initializers = NULL;
+namespace AdLib {
+  Initializer *initializers[MAX_INIT_PRIO+2];
 
-void InitSystem() {
-  for (Initializer *init = initializers; init; init = init->next) {
-    init->init();
+  void InitSystem() {
+    for (int i = 0; i < MAX_INIT_PRIO+2; i++) {
+      for (Initializer *init = initializers[i]; init; init = init->next) {
+        init->init();
+      }
+    }
   }
 }
 
 extern void Main();
 
 void *run_with_gc(void *arg) {
-  InitSystem();
+  AdLib::InitSystem();
   GCVar(ProgName, S(ArgV[0]));
   GCVar(Args, new StrArr(ArgC - 1));
   for (int i = 1; i < ArgC; i++)

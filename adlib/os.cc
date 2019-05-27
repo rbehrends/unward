@@ -80,7 +80,7 @@ void InitSafeChars() {
     safe_chars[(unsigned char) *p++] = 1;
 }
 
-INIT(_AdLibOS, InitSafeChars(););
+INIT_PRIO(_AdLibOS, -1, InitSafeChars(););
 
 Str *ShellEscape(Str *arg) {
   int safe = 1;

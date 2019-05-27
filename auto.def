@@ -46,7 +46,7 @@ proc add-dependency {target deps args} {
   global build_deps build_tasks generated
   set build_deps($target) $deps
   set build_tasks($target) $args
-  lappend generated $target
+  lappend generated {*}$target
 }
 
 proc add-generated-file {target} {
@@ -63,11 +63,11 @@ define CONFIG_ARGS $::argv
 
 use cc cc-lib cc-db cc-shared
 
-set preconf "cnf/preconf.tcl"
-set postconf "cnf/postconf.tcl"
-set presetup "cnf/presetup.tcl"
-set postsetup "cnf/postsetup.tcl"
-set makeextra "cnf/Makefile.extra"
+set preconf "setup/preconf.tcl"
+set postconf "setup/postconf.tcl"
+set presetup "setup/presetup.tcl"
+set postsetup "setup/postsetup.tcl"
+set makeextra "setup/Makefile.extra"
 
 catch { source $preconf }
 

@@ -47,9 +47,7 @@ cleanall: clean .FORCE .QUIET
 	$(RM) -f $(PROGS) $(GENERATED)
 distclean: cleanall .FORCE .QUIET
 	$(RM) -f $(CONFIGITEMS)
-scrub: distclean .FORCE .QUIET
-	$(RM) -f $(GENSRC) Makefile autosetup/jimsh0
-	$(RM) -rf $(BUILDDIR)
+	$(RM) -f Makefile autosetup/jimsh0 config.log
 .FORCE:
 .QUIET:
 	@:

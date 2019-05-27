@@ -15,15 +15,19 @@ struct Initializer {
 
 void InitSystem();
 
-extern Initializer *initializers;
+#define MAX_INIT_PRIO 9
 
-#define INIT(name, code) \
+namespace AdLib {
+  extern Initializer *initializers[MAX_INIT_PRIO+2];
+}
+
+#define INIT_PRIO(name, prio, code) \
   namespace AdLib { namespace Init { \
     struct InitSection_##name : public Initializer { \
       InitSection_##name() \
           : Initializer() { \
-        next = initializers; \
-        initializers = this; \
+        next = initializers[prio+1]; \
+        initializers[prio+1] = this; \
       } \
       virtual void init(); \
     } init_section_##name; \
@@ -31,3 +35,5 @@ extern Initializer *initializers;
       code \
     } \
   } }
+
+#define INIT(name, code) INIT_PRIO(name, 0, code)
