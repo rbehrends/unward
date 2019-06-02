@@ -35,6 +35,7 @@ enum Symbol {
   SymVoid,
   SymVolatile,
   SymWhile,
+  SymEXPORT_INLINE,
   SymIdent,
   SymLiteral,
   SymOp,

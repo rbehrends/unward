@@ -43,6 +43,7 @@ const char *SymbolNames[] = {
   "SymVoid",
   "SymVolatile",
   "SymWhile",
+  "SymEXPORT_INLINE",
   "SymIdent",
   "SymLiteral",
   "SymOp",
@@ -176,6 +177,7 @@ bool Tokenize(SourceFile *source) {
     "void"          { PUSH_TOKEN(SymVoid); }
     "volatile"      { PUSH_TOKEN(SymVolatile); }
     "while"         { PUSH_TOKEN(SymWhile); }
+    "EXPORT_INLINE" { PUSH_TOKEN(SymEXPORT_INLINE); }
     alpha (alpha | digit)* { PUSH_TOKEN(SymIdent); }
     '0x' hex+ intsuffix { PUSH_TOKEN(SymLiteral); }
     '0' oct+ intsuffix { PUSH_TOKEN(SymLiteral); }

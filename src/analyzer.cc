@@ -57,31 +57,39 @@ FuncList *FindInlineFunctions(SourceFile *source) {
   for (;;) {
     Token *token = GetToken(tokens, pos);
     if (token->sym == SymEOF) break;
-    if (token->sym == SymStatic) {
-      start = pos;
-      pos++;
-      token = Skip(tokens, pos, SymsWS);
-      if (token->sym != SymInline) continue;
-      token = SkipUntil(tokens, pos, BIT(SymLPar));
-      if (token->sym == SymEOF) break;
-      if ((token-1)->sym != SymIdent) continue;
-      name = (token-1)->str;
-      namepos = pos - 1;
-      token = SkipUntil(tokens, pos, BIT(SymLBrace)| BIT(SymEOF));
-      if (token->sym == SymEOF) break;
-      token = SkipToMatch(tokens, pos);
-      FuncSpec *fn = new FuncSpec();
-      fn->source = source;
-      fn->start = start;
-      fn->end = pos;
-      fn->namepos = namepos;
-      fn->name = name;
-      result->add(fn);
-      pos++;
-    } else {
-      pos++;
+    start = pos;
+    switch (token->sym) {
+      case SymStatic:
+        pos++;
+        token = Skip(tokens, pos, SymsWS);
+        if (token->sym != SymInline) continue;
+        // fall through
+      case SymEXPORT_INLINE:
+        token = SkipUntil(tokens, pos, BIT(SymLPar));
+        if (token->sym == SymEOF) goto done;
+        if ((token-1)->sym != SymIdent) continue;
+        name = (token-1)->str;
+        namepos = pos - 1;
+        token = SkipUntil(tokens, pos, BIT(SymLBrace)| BIT(SymEOF));
+        if (token->sym == SymEOF) goto done;
+        token = SkipToMatch(tokens, pos);
+        {
+          FuncSpec *fn = new FuncSpec();
+          fn->source = source;
+          fn->start = start;
+          fn->end = pos;
+          fn->namepos = namepos;
+          fn->name = name;
+          result->add(fn);
+        }
+        pos++;
+        break;
+      default:
+        pos++;
+        break;
     }
   }
+  done:
   return result;
 }
 
