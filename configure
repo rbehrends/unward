@@ -1,2 +1,21 @@
 #!/bin/sh
-. $(dirname $0)/autosetup/configure
+set -e
+DIR="`dirname "$0"`"
+BUILDTYPE=`(cat "$DIR"/cnf/buildtype 2>/dev/null || echo unknown) | tr A-Z a-z`
+AUTOSETUP_CONF="$DIR"/autosetup/configure
+WAF_CONF="$DIR"/cnf/configure.waf
+case "$BUILDTYPE" in
+autosetup)
+  . "$AUTOSETUP_CONF"
+  ;;
+waf)
+  . "$WAF_CONF"
+  ;;
+*)
+  if test -d autosetup && test -f auto.def; then
+    . "$AUTOSETUP_CONF"
+  else
+    . "$WAF_CONF"
+  fi
+  ;;
+esac

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "../adlib/config.h"
+#include "adlib/config.h"
 
 #define MORECORE malloc_morecore
 #define MORECORE_CONTIGUOUS 0

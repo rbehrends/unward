@@ -5,3 +5,4 @@ re:^adlib/config\.h
 re:^adlib/config-defs\.h
 re:^Makefile
 re:^config\.log
+.waf*

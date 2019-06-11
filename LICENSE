@@ -1,11 +1,14 @@
-The AdLib system is distributed under the terms of the Boost Software
-License 1.0 (see below). This license applies to all files in this directory
-or any of its subdirectories that are not third-party libraries. The
-following parts are third-party libraries:
+Copyright 2019 Reimer Behrends
+
+This software and its documentation are distributed under the terms of the
+Boost Software License 1.0 (see below). This license applies to all files in
+this directory and any of its subdirectories that are not third-party
+libraries. The following parts are third-party libraries:
 
 * The Tiny GC garbage collector and Doug Lea's malloc() implementation
   (comprising the files in the gclib directory).
 * The autosetup code (comprising the files in the autosetup directory).
+* The "waf" script in tools/waf.
 
 These third-party libraries have their own licenses whose terms differ from
 those of the Boost Software License.

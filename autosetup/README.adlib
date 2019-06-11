@@ -1,5 +1,5 @@
 The autosetup version in this directory has been modified in order
-to meet AdLib's needs. All changes can be found in the adlib.patch
+to meet AdLib's needs. All changes can be found in the adlib-patch.sh
 file. They do the following:
 
 * Always rely on the built-in JimTcl implementation and never on
@@ -15,3 +15,17 @@ file. They do the following:
 * Do not prepopulate CFLAGS with "-g -O2". For AdLib, optimization
   and debug flags go in OPT, not in CFLAGS.
 * Add a missing message to cc-check-tools.
+* The configure script is moved to the autosetup directory to make
+  clear that it is not covered by AdLib's license; in its stead,
+  a shell script is generated to include the moved file.
+* The default option --debug is renamed to --debug-autosetup so that
+  --debug can be used by applications.
+
+To rebuild autosetup, execute the following commands from the AdLib
+root directory, where $AUTOSETUP_DIST is the path to the autosetup
+distribution.
+
+    $AUTOSETUP_DIST/autosetup --install=. --force
+    sh autosetup/adlib-patch.sh
+
+This requires a working awk installation.

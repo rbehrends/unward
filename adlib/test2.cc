@@ -11,10 +11,14 @@ void Main() {
   }
   Check((hash & 0xffff) == 0xc756, "hashing strings");
   Str *data = ReadFile("/dev/null");
-  FileInfo *finfo = FileStat(__FILE__);
+  Str *thisfile = S(__FILE__);
+  if (thisfile->starts_with("../")) {
+    thisfile = thisfile->range_excl(3, thisfile->len());
+  }
+  FileInfo *finfo = FileStat(thisfile);
   Check(finfo != NULL && finfo->is_file && finfo->size > 0, "file stat");
   Check(data && data->len() == 0, "read bytes from file");
-  arr = ReadLines(__FILE__);
+  arr = ReadLines(thisfile);
   Check(arr && arr->len() > __LINE__, "read lines from file");
   Check(WriteFile("/dev/null", S("test")), "write bytes to file");
   static CStr args[] = { "17" };
@@ -22,5 +26,5 @@ void Main() {
   Check(ListFiles(".")->len() > 0, "reading directories");
   StrSet *files = new StrSet(ListFiles("adlib"));
   files = new StrSet(ListFileTree(CurrentDir(), ListFilesRelative));
-  Check(files->contains(S(__FILE__)), "reading directories recursively");
+  Check(files->contains(thisfile), "reading directories recursively");
 }

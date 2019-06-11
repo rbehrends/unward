@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config.h"
+#include "adlib/config.h"
 
 #include <stddef.h>
 #include <stdlib.h>

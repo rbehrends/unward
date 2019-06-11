@@ -266,14 +266,13 @@ proc cc-check-tools {args} {
 		set TOOL [string toupper $tool]
 		set exe [get-env $TOOL [get-define cross]$tool]
 		if {[find-executable {*}$exe]} {
-			define $TOOL $exe
 			msg-result $exe
+			define $TOOL $exe
 			continue
 		}
 		if {[find-executable {*}$tool]} {
-			define $TOOL $tool
-			msg-result $tool
 			msg-result "Warning: Failed to find $exe, falling back to $tool which may be incorrect"
+			define $TOOL $tool
 			continue
 		}
 		user-error "Failed to find $exe"
@@ -469,7 +468,6 @@ proc cc-with {settings args} {
 # Any failures are recorded in 'config.log'
 #
 proc cctest {args} {
-	set src conftest__.c
 	set tmp conftest__
 
 	# Easiest way to merge in the settings
@@ -508,11 +506,14 @@ proc cctest {args} {
 
 	# Build the command line
 	set cmdline {}
+	lappend cmdline {*}[get-define CCACHE]
 	switch -exact -- $opts(-lang) {
 		c++ {
+			set src conftest__.cpp
 			lappend cmdline {*}[get-define CXX] {*}[get-define CXXFLAGS]
 		}
 		c {
+			set src conftest__.c
 			lappend cmdline {*}[get-define CC] {*}[get-define CFLAGS]
 		}
 		default {
@@ -698,7 +699,7 @@ if {[get-define CC] eq ""} {
 	user-error "Could not find a C compiler. Tried: [join $try ", "]"
 }
 
-define CCACHE [find-an-executable [get-env CCACHE ccache]]
+define CCACHE [find-an-executable [get-env CCACHE ""]]
 
 # If any of these are set in the environment, propagate them to the AUTOREMAKE commandline
 foreach i {CC CXX CCACHE CPP CFLAGS CXXFLAGS CXXFLAGS LDFLAGS LIBS CROSS CPPFLAGS LINKFLAGS CC_FOR_BUILD LD} {
@@ -713,9 +714,9 @@ foreach i {CC CXX CCACHE CPP CFLAGS CXXFLAGS CXXFLAGS LDFLAGS LIBS CROSS CPPFLAG
 cc-store-settings {-cflags {} -includes {} -declare {} -link 0 -lang c -libs {} -code {} -nooutput 0}
 set autosetup(cc-include-deps) {}
 
-msg-result "C compiler...[get-define CC] [get-define CFLAGS]"
+msg-result "C compiler...[get-define CCACHE] [get-define CC] [get-define CFLAGS]"
 if {[get-define CXX] ne "false"} {
-	msg-result "C++ compiler...[get-define CXX] [get-define CXXFLAGS]"
+	msg-result "C++ compiler...[get-define CCACHE] [get-define CXX] [get-define CXXFLAGS]"
 }
 msg-result "Build C compiler...[get-define CC_FOR_BUILD]"
 

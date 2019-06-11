@@ -2,7 +2,7 @@
 
 #include "config-defs.h"
 
-#define ADLIB_DEBUG @DEBUG@
+#define CHECK_CONTRACTS @CHECKS@
 
 typedef @Word@ Word;
 typedef @Word8@ Word8;
@@ -18,9 +18,9 @@ typedef @Int32@ Int32;
 typedef @Int64@ Int64;
 typedef @LongInt@ LongInt;
 
-@if HAVE_OFF_T
+#ifdef HAVE_OFF_T
 typedef @Offset@ Offset;
-@endif
+#endif
 
 #ifdef HAVE_DIRENT_H
 #define HAVE_DIR_SUPPORT

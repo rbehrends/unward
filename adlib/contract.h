@@ -16,7 +16,7 @@ struct ContractException : public GC {
   Str *error;
 };
 
-#if ADLIB_DEBUG
+#if CHECK_CONTRACTS
 static inline void require(bool cond, const char *message) {
   if (!cond)
     ContractFailure(Precondition, message);

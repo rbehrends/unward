@@ -1,7 +1,7 @@
 # vim:set ft=tcl:
 
 global builddir bindir libraries programs tests
-global progs boehm makevars generated options
+global progs boehm makevars generated options use_re2c
 
 set builddir "build"
 set bindir "bin"
@@ -12,11 +12,12 @@ set libraries {adlib {}}
 set boehm 0
 set generated {}
 set makevars {}
+
 set options {
   with-boehm-gc:=yes => "Use the Boehm GC; the argument can be yes, no, or a path to the GC's installation directory."
   with-re2c => "Enable re2c."
   adlibdev => "Change Makefile defaults for AdLib core development."
-  devel => "Enable debug mode by default (implied by --adlibdev)."
+  checks => "Enable contract checking (implied by --adlibdev)."
 }
 
 proc add-program {name dir args} {
@@ -316,19 +317,24 @@ set inttypes {char short int long}
 
 proc def-int-type {name prefix size} {
   global inttypes csize have_long_long
+  if {$name == "Int"} {
+    set sizename "SIZEOF_INTEGER"
+  } else {
+    set sizename "SIZEOF_[string toupper $name]"
+  }
   foreach type $inttypes {
     if {$csize($type) == $size} {
       define $name "$prefix $type"
-      define SIZEOF_[string toupper $name] $size
+      define $sizename $size
       return
     }
   }
   if {$have_long_long} {
     define $name "$prefix long long"
-    define SIZEOF_[string toupper $name] $csize(long long)
+    define $sizename $csize(long long)
   } else {
     define $name "$prefix long"
-    define SIZEOF_[string toupper $name] $csize(long)
+    define $sizename $csize(long)
   }
 }
 
@@ -417,7 +423,7 @@ cc-with {-lang c++} {
       break
     }
   }
-  if {[opt-bool adlibdev] || [opt-bool devel]} {
+  if {[opt-bool adlibdev]} {
     cc-check-standards c++98 c++03
   }
   msg-checking "Checking for isatty()..."
@@ -448,14 +454,14 @@ catch { source $postconf }
 
 if {[opt-bool adlibdev]} {
   define DEFAULT_TARGET "\$(TARGETS)"
-  define DEBUG 1
+  define CHECKS 1
 } else {
   define DEFAULT_TARGET "prog"
-  define DEBUG 0
+  define CHECKS 0
 }
 
-if {[opt-bool devel]} {
-  define DEBUG 1
+if {[opt-bool checks]} {
+  define CHECKS 1
 }
 
 define USE_BOEHM_GC $boehm
