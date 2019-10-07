@@ -73,6 +73,8 @@ void GenUnsafeCode(FuncSpec *func, StrSet *filter) {
     end++;
   func->end = end;
   Int funcpos = -1;
+  // Find first ident + left parenthesis sequence. This is the location of
+  // the function name.
   for (Int pos = start; pos <= end; pos++) {
     switch (tokens->at(pos).sym) {
       case SymIdent:
@@ -86,19 +88,37 @@ void GenUnsafeCode(FuncSpec *func, StrSet *filter) {
     }
   }
   func->callpositions->add(funcpos);
-  TokenList *unsafe_code = tokens->range_incl(start, end);
-  if (unsafe_code->last().sym != SymEOL) {
-    Token nl(SymEOL, Intern("\n", 1));
-    unsafe_code->add(nl);
-  }
+  // Replace all calls to another function that has been made unsafe
+  // with a call to the matching unsafe function.
+  TokenList *rewritten_code = tokens->range_incl(start, end);
   PosList *callpositions = func->callpositions;
   for (Int i = 0; i < callpositions->len(); i++) {
     Int pos = callpositions->at(i);
     Str *name = tokens->at(pos).str;
     if (filter->contains(name)) {
-      unsafe_code->at(pos-start).str = UnsafeName(name);
+      rewritten_code->at(pos-start).str = UnsafeName(name);
     }
   }
+  // Wrap the code in #ifdef USE_HPC_GUARDS.
+  TokenList *unsafe_code = new TokenList();
+  Token ifdef(SymPPOther, S("#ifdef USE_HPC_GUARDS\n"));
+  Token else1(SymPPOther, S("#else\n"));
+  Token define(SymPPOther,
+    S("#define ")
+    ->add(UnsafeName(func->name))
+    ->add(" ")
+    ->add(func->name)
+    ->add("\n"));
+  Token else2(SymPPOther, S("#endif\n"));
+  unsafe_code->add(ifdef);
+  unsafe_code->add(rewritten_code);
+  if (unsafe_code->last().sym != SymEOL) {
+    Token nl(SymEOL, Intern("\n", 1));
+    unsafe_code->add(nl);
+  }
+  unsafe_code->add(else1);
+  unsafe_code->add(define);
+  unsafe_code->add(else2);
   func->unsafe_code = unsafe_code;
 }
 
