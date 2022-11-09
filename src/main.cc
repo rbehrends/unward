@@ -156,7 +156,7 @@ void Main() {
   // Step 8: Perform in-memory transformations of the source files.
   SourceList *unsafe_sources = UpdateUnsafeSections(unprotected,
     used_funcnames);
-  StrSet *dont_rewrite = new StrSet(ROOT_FUNCS);
+  StrSet *dont_rewrite = new StrSet();
   // do not generate code for already existing unsafe functions
   dont_rewrite->union_in_place(unsafe_names);
   SourceList *unsafe_sources2 = GenUnsafeCode(funcs, used_funcnames,
